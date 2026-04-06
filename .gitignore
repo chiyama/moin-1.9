@@ -24,3 +24,4 @@ dist
 .vagrant
 .DS_Store
 
+.venv/
