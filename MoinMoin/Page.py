@@ -1451,12 +1451,14 @@ class Page(object):
             macro_obj = Macro(parser)
             # Fix __file__ when running from a zip package
             import MoinMoin
-            if hasattr(MoinMoin, '__loader__'):
+            if hasattr(MoinMoin, '__loader__') and hasattr(MoinMoin.__loader__, 'archive'):
                 __file__ = os.path.join(MoinMoin.__loader__.archive, 'dummy')
             try:
                 exec(code)
-            except "CacheNeedsUpdate": # convert the exception
-                raise Exception("CacheNeedsUpdate")
+            except Exception as err:
+                if is_cache_exception(err):
+                    raise Exception("CacheNeedsUpdate")
+                raise
         finally:
             request.clock.stop("Page.execute")
 

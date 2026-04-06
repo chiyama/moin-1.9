@@ -247,7 +247,8 @@ def quoteWikinameFS(wikiname, charset=config.charset):
     @rtype: string
     @return: quoted name, safe for any file system
     """
-    filename = wikiname.encode(charset)
+    # In Python 3, work with str directly; encode individual unsafe chars for quoting
+    filename = wikiname
 
     quoted = []
     location = 0
@@ -257,8 +258,8 @@ def quoteWikinameFS(wikiname, charset=config.charset):
         location = needle.end()
         # Quote and append unsafe stuff
         quoted.append('(')
-        for character in needle.group():
-            quoted.append('%02x' % ord(character))
+        for byte in needle.group().encode(charset):
+            quoted.append('%02x' % byte)
         quoted.append(')')
 
     # append rest of string
@@ -285,11 +286,9 @@ def unquoteWikiname(filename, charsets=[config.charset]):
     @rtype: Unicode String
     @return: WikiName
     """
-    ### Temporary fix start ###
-    # From some places we get called with Unicode strings
-    if isinstance(filename, type(u'')):
-        filename = filename.encode(config.charset)
-    ### Temporary fix end ###
+    # In Python 3, filename is always str
+    if isinstance(filename, bytes):
+        filename = filename.decode(charsets[0])
 
     parts = []
     start = 0
@@ -297,18 +296,15 @@ def unquoteWikiname(filename, charsets=[config.charset]):
         # append leading unquoted stuff
         parts.append(filename[start:needle.start()])
         start = needle.end()
-        # Append quoted stuff
+        # Append quoted stuff - decode hex bytes back to string
         group = needle.group(1)
         # Filter invalid filenames
         if (len(group) % 2 != 0):
             raise InvalidFileNameError(filename)
         try:
-            for i in range(0, len(group), 2):
-                byte = group[i:i+2]
-                character = chr(int(byte, 16))
-                parts.append(character)
-        except ValueError:
-            # byte not in hex, e.g 'xy'
+            raw_bytes = bytes(int(group[i:i+2], 16) for i in range(0, len(group), 2))
+            parts.append(raw_bytes.decode(charsets[0]))
+        except (ValueError, UnicodeDecodeError):
             raise InvalidFileNameError(filename)
 
     # append rest of string
@@ -318,13 +314,6 @@ def unquoteWikiname(filename, charsets=[config.charset]):
         parts.append(filename[start:len(filename)])
         wikiname = ''.join(parts)
 
-    # FIXME: This looks wrong, because at this stage "()" can be both errors
-    # like open "(" without close ")", or unquoted valid characters in the file name.
-    # Filter invalid filenames. Any left (xx) must be invalid
-    #if '(' in wikiname or ')' in wikiname:
-    #    raise InvalidFileNameError(filename)
-
-    wikiname = decodeUserInput(wikiname, charsets)
     return wikiname
 
 # time scaling
@@ -1888,10 +1877,10 @@ def invoke_extension_function(request, function, args, fixed_args=[]):
         positional = []
 
     if isfunction(function) or ismethod(function):
-        argnames, varargs, varkw, defaultlist = getargspec(function)
+        argnames, varargs, varkw, defaultlist = getargspec(function)[:4]
     elif isclass(function):
         (argnames, varargs,
-         varkw, defaultlist) = getargspec(function.__init__.__func__)
+         varkw, defaultlist) = getargspec(function.__init__.__func__)[:4]
     else:
         raise TypeError('function must be a function, method or class')
 
