@@ -34,7 +34,7 @@ def execute(pagename, request):
                       f.text(_("Page size: %d") % page.size()),
                       f.paragraph(0))
 
-        digest = hashlib.new('sha1', page.get_raw_body().encode(config.charset)).hexdigest().upper()
+        digest = hashlib.new('sha1', page.get_raw_body(.encode('utf-8')).encode(config.charset)).hexdigest().upper()
         request.write(f.paragraph(1),
                       f.rawHTML('%(label)s <tt>%(value)s</tt>' % {
                           'label': _("SHA digest of this page's content is:"),
@@ -310,7 +310,7 @@ def execute(pagename, request):
         # print version history
         from MoinMoin.widget.browser import DataBrowserWidget
 
-        request.write(unicode(html.H2().append(_('Revision History'))))
+        request.write(str(html.H2().append(_('Revision History'))))
 
         if not count: # there was no entry in logfile
             request.write(_('No log entries found.'))
@@ -338,7 +338,7 @@ def execute(pagename, request):
                 paging_nav_html,
                 f.div(0)
             ]))
-        request.write(unicode(form))
+        request.write(str(form))
 
     # main function
     _ = request.getText

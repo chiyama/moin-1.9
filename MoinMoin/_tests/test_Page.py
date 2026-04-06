@@ -23,7 +23,7 @@ class TestPage:
     def testBody(self):
         page = Page(self.request, u'FrontPage')
         body = page.body
-        assert type(body) is unicode
+        assert isinstance(body, str)
         assert 'MoinMoin' in body
         assert body.endswith('\n')
         assert '\r' not in body
@@ -54,8 +54,8 @@ class TestPage:
 
     def testSendPage(self):
         page = Page(self.request, u"FrontPage")
-        import StringIO
-        out = StringIO.StringIO()
+        import io
+        out = io.StringIO()
         self.request.redirect(out)
         page.send_page(msg=u'Done', emit_headers=False)
         result = out.getvalue()

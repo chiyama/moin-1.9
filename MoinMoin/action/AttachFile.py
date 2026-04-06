@@ -28,7 +28,7 @@
 """
 
 import os, time, zipfile, errno, datetime
-from StringIO import StringIO
+from io import StringIO
 import tarfile
 
 from werkzeug.http import http_date
@@ -160,7 +160,7 @@ def getFilename(request, pagename, filename):
         @rtype: string (in config.charset encoding)
         @return: complete path/filename of attached file
     """
-    if isinstance(filename, unicode):
+    if isinstance(filename, str):
         filename = filename.encode(config.charset)
     return os.path.join(getAttachDir(request, pagename, create=1), filename)
 
@@ -811,7 +811,7 @@ class ContainerItem:
     def put(self, member, content, content_length=None):
         """ save data into a container's member """
         tf = tarfile.TarFile(self.container_filename, mode='a')
-        if isinstance(member, unicode):
+        if isinstance(member, str):
             member = member.encode('utf-8')
         ti = tarfile.TarInfo(member)
         if isinstance(content, str):
@@ -1181,7 +1181,7 @@ def _do_unzip(pagename, request, overwrite=False):
                         'filelist': ', '.join(not_overwritten), }
             else:
                 msg = _("Attachment '%(filename)s' unzipped.") % {'filename': filename}
-    except (IOError, RuntimeError, zipfile.BadZipfile, zipfile.LargeZipFile), err:
+    except (IOError, RuntimeError, zipfile.BadZipfile, zipfile.LargeZipFile) as err:
         # We don't want to crash with a traceback here (an exception
         # here could be caused by an uploaded defective zip file - and
         # if we crash here, the user does not get a UI to remove the
@@ -1233,7 +1233,7 @@ def send_viewfile(pagename, request):
             try:
                 # rU: universal newline support so that even a \r is considered a valid line separator.
                 # CSV exported by office (on Mac?) has \r line separators.
-                content = file(fpath, 'rU').read()
+                content = open(fpath, 'r').read()
                 content = wikiutil.decodeUnknownInput(content)
                 colorizer = Parser(content, request, filename=filename)
                 colorizer.format(request.formatter)

@@ -9,7 +9,7 @@ master_url = "https://master19.moinmo.in/?action=xmlrpc2"
 user = "ThomasWaldmann" # must be a known Wiki account
 
 import sys, os
-import xmlrpclib
+import xmlrpc.client
 
 password = os.environ.get("PASS", "")
 sys.path.insert(0, '../..')
@@ -50,15 +50,15 @@ def run():
     pagename = "MoinI18n/%s" % lang
     pagedata = data.encode('utf-8')
 
-    wiki = xmlrpclib.ServerProxy(master_url)
+    wiki = xmlrpc.client.ServerProxy(master_url)
     token = wiki.getAuthToken(user, password)
-    mc = xmlrpclib.MultiCall(wiki)
+    mc = xmlrpc.client.MultiCall(wiki)
     mc.applyAuthToken(token)
     mc.WhoAmI() # then we see in the result if auth worked correctly!
     mc.putPage(pagename, pagedata)
     mc.deleteAuthToken(token)
     result = mc()
-    print "Page: %s rc=%r" % (pagename, list(result))
+    print(("Page: %s rc=%r" % (pagename, list(result))))
 
 if __name__ == "__main__":
     run()

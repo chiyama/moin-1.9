@@ -38,7 +38,7 @@ class UnicodeQuery(xapian.Query):
 
         nargs = []
         for term in args:
-            if isinstance(term, unicode):
+            if isinstance(term, str):
                 term = term.encode(self.encoding)
             elif isinstance(term, list) or isinstance(term, tuple):
                 term = [t.encode(self.encoding) for t in term]
@@ -62,7 +62,7 @@ class MoinSearchConnection(xappy.SearchConnection):
         """
         Return all the documents in the index (that match the field=value kwargs given).
         """
-        field_queries = [self.query_field(field, value) for field, value in fields.iteritems()]
+        field_queries = [self.query_field(field, value) for field, value in list(fields.items())]
         query = self.query_composite(self.OP_AND, field_queries)
         return self.get_all_documents(query)
 
@@ -113,7 +113,7 @@ class StemmedField(xappy.Field):
 
     def __init__(self, name, value, request):
         analyzer = WikiAnalyzer(request=request, language=request.cfg.language_default)
-        value = ' '.join(unicode('%s %s' % (word, stemmed)).strip() for word, stemmed in analyzer.tokenize(value))
+        value = ' '.join('%s %s' % (word.decode(stemmed)).strip() for word, stemmed in analyzer.tokenize(value))
         super(StemmedField, self).__init__(name, value)
 
 
@@ -238,7 +238,7 @@ class XapianIndex(BaseIndex):
         if mode == 'update':
             try:
                 doc = connection.get_document(doc_id)
-                docmtime = long(doc.data['mtime'][0])
+                docmtime = int(doc.data['mtime'][0])
             except KeyError:
                 do_index = True
             else:
@@ -264,12 +264,12 @@ class XapianIndex(BaseIndex):
         if multivalued_fields is None:
             multivalued_fields = {}
 
-        for field, value in fields.iteritems():
+        for field, value in list(fields.items()):
             document.fields.append(xappy.Field(field, value))
             if field in fields_to_stem:
                 document.fields.append(StemmedField(field, value, request))
 
-        for field, values in multivalued_fields.iteritems():
+        for field, values in list(multivalued_fields.items()):
             for value in values:
                 document.fields.append(xappy.Field(field, value))
 
@@ -429,7 +429,7 @@ class XapianIndex(BaseIndex):
 
             try:
                 connection.replace(doc)
-            except xappy.IndexerError, err:
+            except xappy.IndexerError as err:
                 logging.warning("IndexerError at %r %r %r (%s)" % (
                     wikiname, pagename, revision, str(err)))
 
@@ -492,7 +492,7 @@ class XapianIndex(BaseIndex):
 
                 try:
                     connection.replace(doc)
-                except xapian.Error, err:
+                except xapian.Error as err:
                     logging.error('attachment %r (page %r) could not be updated in index: %s' % (
                         attachmentname, pagename, str(err)))
                 else:
@@ -501,7 +501,7 @@ class XapianIndex(BaseIndex):
             # attachment file was deleted, remove it from index also
             try:
                 connection.delete(itemid)
-            except xapian.Error, err:
+            except xapian.Error as err:
                 logging.error('attachment %r (page %r) could not be removed from index: %s' % (
                     attachmentname, pagename, str(err)))
             else:

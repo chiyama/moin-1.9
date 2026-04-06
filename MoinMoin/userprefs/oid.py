@@ -46,7 +46,7 @@ class Settings(UserPrefBase):
             return
         openids = self.request.user.openids[:]
         for oid in self.request.user.openids:
-            name = "rm-%s" % hashlib.new('sha1', oid).hexdigest()
+            name = "rm-%s" % hashlib.new('sha1', oid.encode('utf-8')).hexdigest()
             if name in self.request.form:
                 openids.remove(oid)
         if not openids and len(self.request.cfg.auth) == 1:
@@ -133,10 +133,10 @@ class Settings(UserPrefBase):
         _ = self._
         form = self.request.form
 
-        if self.request.values.has_key('oid.return'):
+        if 'oid.return' in self.request.values:
             return self._handle_oidreturn()
 
-        if form.has_key('cancel'):
+        if 'cancel' in form:
             return
 
         if self.request.method != 'POST':
@@ -145,10 +145,10 @@ class Settings(UserPrefBase):
         if not wikiutil.checkTicket(self.request, form.get('ticket', '')):
             return
 
-        if form.has_key('remove'):
+        if 'remove' in form:
             return self._handle_remove()
 
-        if form.has_key('add'):
+        if 'add' in form:
             return self._handle_add()
 
     def _make_form(self):
@@ -172,7 +172,7 @@ class Settings(UserPrefBase):
         _ = self.request.getText
         form = self._make_form()
         for oid in self.request.user.openids:
-            name = "rm-%s" % hashlib.new('sha1', oid).hexdigest()
+            name = "rm-%s" % hashlib.new('sha1', oid.encode('utf-8')).hexdigest()
             form.append(html.INPUT(type="checkbox", name=name, id=name))
             form.append(html.LABEL(for_=name).append(html.Text(oid)))
             form.append(html.BR())
@@ -229,4 +229,4 @@ document.getElementById("openid_message").submit();
         label = _("Cancel")
         form.append(html.INPUT(type="submit", name='cancel', value=label))
         self._make_row('', [form])
-        return unicode(ret)
+        return str(ret)

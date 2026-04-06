@@ -32,7 +32,7 @@ class TestPasswordChecker:
         else:
             for pw, result in self.tests_builtin:
                 pw_error = pw_checker(self.request, self.username, pw)
-                print "%r: %s" % (pw, pw_error)
+                print(("%r: %s" % (pw, pw_error)))
                 assert result == (pw_error is None)
 
 coverage_modules = ['MoinMoin.config.multiconfig']

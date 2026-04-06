@@ -64,7 +64,7 @@ class LocalConfig(multiconfig.DefaultConfig):
 
 try:
     from wikiconfig_local import Config
-except ImportError, err:
+except ImportError as err:
     if not str(err).endswith('wikiconfig_local'):
         raise
     Config = LocalConfig

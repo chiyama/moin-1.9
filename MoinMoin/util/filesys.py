@@ -102,7 +102,7 @@ def access_denied_decorator(fn):
             while True:
                 try:
                     return fn(*args, **kwargs)
-                except OSError, err:
+                except OSError as err:
                     retry += 1
                     if retry > max_retries:
                         raise
@@ -234,7 +234,7 @@ def copytree(src, dst, symlinks=False):
             else:
                 shutil.copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
-        except (IOError, os.error), why:
+        except (IOError, os.error) as why:
             errors.append((srcname, dstname, why))
     if errors:
         raise EnvironmentError(str(errors))
@@ -294,19 +294,11 @@ def dcdisable():
     global DCENABLED
     DCENABLED = 0
 
-import dircache
-
 def dclistdir(path):
     warnings.warn(dc_deprecated, DeprecationWarning, stacklevel=2)
-    if sys.platform == 'win32' or not DCENABLED:
-        return os.listdir(path)
-    else:
-        return dircache.listdir(path)
+    return os.listdir(path)
 
 def dcreset():
     warnings.warn(dc_deprecated, DeprecationWarning, stacklevel=2)
-    if sys.platform == 'win32' or not DCENABLED:
-        return
-    else:
-        return dircache.reset()
+    return
 

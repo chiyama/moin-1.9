@@ -331,7 +331,7 @@ class GivenAuth(BaseAuth):
             Note: if you need something more special, you could create your own
                   auth class, inherit from this class and overwrite this function.
         """
-        assert isinstance(name, unicode)
+        assert isinstance(name, str)
         if self.strip_maildomain:
             # split off mail domain, e.g. "user@example.org" -> "user"
             name = name.split(u'@')[0]

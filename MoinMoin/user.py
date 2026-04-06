@@ -211,7 +211,7 @@ def addLowerCaseKeys(cache):
     for attrname in CACHED_USER_ATTRS:
         attr2id = c[attrname]
         attr2id_lower = c[attrname + "_lower"] = {}
-        for key, value in attr2id.iteritems():
+        for key, value in list(attr2id.items()):
             attr2id_lower[key.lower()] = value
     return c
 
@@ -285,7 +285,7 @@ def encodePassword(cfg, pwd, salt=None, scheme=None):
         if salt is None:
             salt = random_string(20)
         assert isinstance(salt, str)
-        hash = hashlib.new('sha1', pwd)
+        hash = hashlib.new('sha1', pwd.encode('utf-8'))
         hash.update(salt)
         return '{SSHA}' + base64.encodestring(hash.digest() + salt).rstrip()
     else:
@@ -416,7 +416,7 @@ def encodeDict(items):
     @return: dict encoded as unicode
     """
     line = []
-    for key, value in items.items():
+    for key, value in list(items.items()):
         item = u'%s:%s' % (key, value)
         line.append(item)
     line = '\t'.join(line)
@@ -629,7 +629,7 @@ class User:
                 del user_data[key]
 
         # Copy user data into user object
-        for key, val in user_data.items():
+        for key, val in list(user_data.items()):
             vars(self)[key] = val
 
         self.tz_offset = int(self.tz_offset)
@@ -701,7 +701,7 @@ class User:
                         pwd_context = self._cfg.cache.pwd_context
                         try:
                             password_correct = pwd_context.verify(password, d)
-                        except ValueError, err:
+                        except ValueError as err:
                             # can happen for unknown scheme
                             logging.error('in user profile %r, verifying the passlib pw hash crashed [%s]' % (self.id, str(err)))
                         if password_correct:
@@ -757,7 +757,7 @@ class User:
 
     def persistent_items(self):
         """ items we want to store into the user profile """
-        return [(key, value) for key, value in vars(self).items()
+        return [(key, value) for key, value in list(vars(self).items())
                     if key not in self._cfg.user_transient_fields and key[0] != '_']
 
     def save(self):
@@ -793,7 +793,7 @@ class User:
             elif isinstance(value, dict):
                 key += '{}'
                 value = encodeDict(value)
-            line = u"%s=%s" % (key, unicode(value))
+            line = u"%s=%s" % (key, str(value))
             line = line.replace('\n', ' ').replace('\r', ' ') # no lineseps
             data.write(line + '\n')
         data.close()
@@ -855,7 +855,7 @@ class User:
         """
         if self.valid:
             interwikiname = self._cfg.interwikiname or u''
-            bookmark = unicode(tm)
+            bookmark = str(tm)
             self.bookmarks[interwikiname] = bookmark
             self.save()
 
@@ -1036,7 +1036,7 @@ class User:
         # first remove all old entries mapping to this userid:
         for attrname in CACHED_USER_ATTRS:
             attr2id = cache[attrname]
-            for key, value in attr2id.items():
+            for key, value in list(attr2id.items()):
                 if value == userid:
                     del attr2id[key]
 

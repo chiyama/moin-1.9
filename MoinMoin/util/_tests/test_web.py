@@ -64,19 +64,19 @@ class TestMakeSelection:
     def testMakeSelectNoSelection(self):
         """util.web: creating html select with no selection"""
         expected = self.expected
-        result = unicode(web.makeSelection('test', self.values, size=1))
+        result = web.makeSelection('test'.decode(self.values, size=1))
         assert result == expected
 
     def testMakeSelectNoSelection2(self):
         """util.web: creating html select with non existing selection"""
         expected = self.expected
-        result = unicode(web.makeSelection('test', self.values, 'three', size=1))
+        result = web.makeSelection('test'.decode(self.values, 'three', size=1))
         assert result == expected
 
     def testMakeSelectWithSelectedItem(self):
         """util.web: creating html select with selected item"""
         expected = self.expected.replace('value="two"', 'selected value="two"')
-        result = unicode(web.makeSelection('test', self.values, 'two', size=1))
+        result = web.makeSelection('test'.decode(self.values, 'two', size=1))
         assert result == expected
 
 

@@ -28,12 +28,9 @@ class PackageException(Exception):
 class ScriptException(Exception):
     """ Raised when there is a problem in the script. """
 
-    def __unicode__(self):
-        """ Return unicode error message """
-        if isinstance(self.args[0], str):
-            return unicode(self.args[0], config.charset)
-        else:
-            return unicode(self.args[0])
+    def __str__(self):
+        """ Return str error message """
+        return str(self.args[0])
 
 class RuntimeScriptException(ScriptException):
     """ Raised when the script problem occurs at runtime. """
@@ -139,7 +136,7 @@ class ScriptEngine:
             if not os.path.exists(target):
                 self._extractToFile(zipname, target)
                 if os.path.exists(target):
-                    filesys.chmod(target, 0666 & config.umask)
+                    filesys.chmod(target, 0o666 & config.umask)
                     action = 'ATTNEW'
                     edit_logfile_append(self, pagename, path, rev, action, logname='edit-log',
                                        comment=u'%(filename)s' % {"filename": filename}, author=author)
@@ -364,7 +361,7 @@ class ScriptEngine:
             target = os.path.join(attachments, filename)
             self._extractToFile(zipname, target)
             if os.path.exists(target):
-                filesys.chmod(target, 0666 & config.umask)
+                filesys.chmod(target, 0o666 & config.umask)
         else:
             self.msg += u"action replace underlay attachment: not enough rights - nothing done \n"
 
@@ -446,13 +443,13 @@ class ScriptEngine:
                 fn(*elements[1:])
             except ScriptExit:
                 break
-            except TypeError, e:
-                self.msg += u"Exception %s (line %i): %s\n" % (e.__class__.__name__, lineno, unicode(e))
+            except TypeError as e:
+                self.msg += u"Exception %s (line %i): %s\n" % (e.__class__.__name__, lineno, str(e))
                 success = False
                 break
-            except RuntimeScriptException, e:
+            except RuntimeScriptException as e:
                 if not self.ignoreExceptions:
-                    self.msg += u"Exception %s (line %i): %s\n" % (e.__class__.__name__, lineno, unicode(e))
+                    self.msg += u"Exception %s (line %i): %s\n" % (e.__class__.__name__, lineno, str(e))
                     success = False
                     break
 
@@ -530,7 +527,7 @@ class ZipPackage(Package, ScriptEngine):
 def main():
     args = sys.argv
     if len(args)-1 not in (2, 3) or args[1] not in ('l', 'i'):
-        print >> sys.stderr, """MoinMoin Package Installer v%(version)i
+        print("""MoinMoin Package Installer v%(version)i
 
 %(myname)s action packagefile [request URL]
 
@@ -543,7 +540,7 @@ Example:
 
 %(myname)s i ../package.zip
 
-""" % {"version": MAX_VERSION, "myname": os.path.basename(args[0])}
+""" % {"version": MAX_VERSION, "myname": os.path.basename(args[0])}, file=sys.stderr)
         raise SystemExit
 
     packagefile = args[2]
@@ -558,18 +555,18 @@ Example:
 
     package = ZipPackage(request, packagefile)
     if not package.isPackage():
-        print "The specified file %s is not a package." % packagefile
+        print("The specified file %s is not a package." % packagefile)
         raise SystemExit
 
     if args[1] == 'l':
-        print package.getScript()
+        print(package.getScript())
     elif args[1] == 'i':
         if package.installPackage():
-            print "Installation was successful!"
+            print("Installation was successful!")
         else:
-            print "Installation failed."
+            print("Installation failed.")
         if package.msg:
-            print package.msg
+            print(package.msg)
 
 if __name__ == '__main__':
     main()

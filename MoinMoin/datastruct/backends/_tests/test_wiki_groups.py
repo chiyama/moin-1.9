@@ -9,7 +9,7 @@ MoinMoin - MoinMoin.backends.wiki_group tests
 @license: GNU GPL, see COPYING for details.
 """
 
-from py.test import raises
+from pytest import raises
 import re, shutil
 
 from MoinMoin.datastruct.backends._tests import GroupsBackendTest
@@ -28,7 +28,7 @@ class TestWikiGroupBackend(GroupsBackendTest):
     def setup_class(self):
         become_trusted(self.request)
 
-        for group, members in self.test_groups.iteritems():
+        for group, members in list(self.test_groups.items()):
             page_text = ' * %s' % '\n * '.join(members)
             create_page(self.request, group, page_text)
 

@@ -6,7 +6,7 @@
     @license: GNU GPL, see COPYING for details.
 """
 
-import os, StringIO
+import os, io
 
 from MoinMoin import caching
 from MoinMoin.action import AttachFile, cache
@@ -98,7 +98,7 @@ class TestSendCached:
         key = 'nooneknowsit'
         filename = "test.png"
         data = "dontcareatall"
-        data_file = StringIO.StringIO(data)
+        data_file = io.StringIO(data)
         cache.put(request, key, data_file)
         url = cache.url(request, key)
 

@@ -140,10 +140,10 @@ class TestExpandPrivateVariables(TestExpandUserName):
             revisionsDir = os.path.join(path, 'revisions')
             os.mkdir(revisionsDir)
             current = '00000001'
-            file(os.path.join(path, 'current'), 'w').write('%s\n' % current)
+            open(os.path.join(path, 'current'), 'w').write('%s\n' % current)
             text = u' ME:: %s\n' % self.name
-            file(os.path.join(revisionsDir, current), 'w').write(text)
-        except Exception, err:
+            open(os.path.join(revisionsDir, current), 'w').write(text)
+        except Exception as err:
             py.test.skip("Can not be create test page: %s" % err)
 
     def deleteCaches(self):
@@ -191,7 +191,7 @@ class TestSave(object):
         editor = PageEditor(self.request, pagename)
         editor.saveText(testtext, 0)
 
-        print "PageEditor can't save a page if Abort is returned from PreSave event handlers"
+        print("PageEditor can't save a page if Abort is returned from PreSave event handlers")
         page = Page(self.request, pagename)
         assert page.body != testtext
 
@@ -286,10 +286,10 @@ class TestCopyPage(object):
             revisionsDir = os.path.join(path, 'revisions')
             os.mkdir(revisionsDir)
             current = '00000001'
-            file(os.path.join(path, 'current'), 'w').write('%s\n' % current)
+            open(os.path.join(path, 'current'), 'w').write('%s\n' % current)
 
-            file(os.path.join(revisionsDir, current), 'w').write(self.text)
-        except Exception, err:
+            open(os.path.join(revisionsDir, current), 'w').write(self.text)
+        except Exception as err:
             py.test.skip("Can not be create test page: %s" % err)
 
     def deleteTestPage(self):
@@ -306,7 +306,7 @@ class TestCopyPage(object):
         self.createTestPage()
         result, msg = PageEditor(self.request, self.pagename).copyPage(self.copy_pagename)
         revision = Page(self.request, self.copy_pagename).current_rev()
-        assert result and revision is 2
+        assert result and revision == 2
 
     def test_copy_page_acl_read(self):
         """
@@ -316,7 +316,7 @@ class TestCopyPage(object):
         self.createTestPage()
         result, msg = PageEditor(self.request, self.pagename).copyPage(self.copy_pagename)
         revision = Page(self.request, self.copy_pagename).current_rev()
-        assert result and revision is 2
+        assert result and revision == 2
 
     def test_copy_page_acl_no_read(self):
         """
@@ -326,6 +326,6 @@ class TestCopyPage(object):
         self.createTestPage()
         result, msg = PageEditor(self.request, self.pagename).copyPage(self.copy_pagename)
         revision = Page(self.request, self.copy_pagename).current_rev()
-        assert result and revision is 2
+        assert result and revision == 2
 
 coverage_modules = ['MoinMoin.PageEditor']

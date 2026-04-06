@@ -8,7 +8,7 @@
     @license: GNU GPL, see COPYING for details.
 """
 
-import time, inspect, StringIO, sys, warnings
+import time, inspect, io, sys, warnings
 
 from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
@@ -41,7 +41,7 @@ class EnvironProxy(property):
         @param name: key (or factory for convenience)
         @param default: literal object or callable
         """
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             default = name
             name = default.__name__
         self.name = 'moin.' + name
@@ -223,7 +223,7 @@ class HTTPContext(BaseContext):
     def __getattr__(self, name):
         try:
             return getattr(self.request, name)
-        except AttributeError, e:
+        except AttributeError as e:
             return super(HTTPContext, self).__getattribute__(name)
 
     # methods regarding manipulation of HTTP related data
@@ -293,7 +293,7 @@ class HTTPContext(BaseContext):
 
     def redirectedOutput(self, function, *args, **kw):
         """ Redirect output during function, return redirected output """
-        buf = StringIO.StringIO()
+        buf = io.StringIO()
         self.redirect(buf)
         try:
             function(*args, **kw)
@@ -318,9 +318,9 @@ class HTTPContext(BaseContext):
         @param bufsize: size of chunks to read/write
         @param do_flush: call flush after writing?
         """
-        def simple_wrapper(fileobj, bufsize):
-            return iter(lambda: fileobj.read(bufsize), '')
-        file_wrapper = self.environ.get('wsgi.file_wrapper', simple_wrapper)
+        def simple_wrapper_bytes(fileobj, bufsize):
+            return iter(lambda: fileobj.read(bufsize), b'')
+        file_wrapper = self.environ.get('wsgi.file_wrapper', simple_wrapper_bytes)
         self.request.direct_passthrough = True
         self.request.response = file_wrapper(fileobj, bufsize)
         raise MoinMoinFinish('sent file')
@@ -347,8 +347,8 @@ class HTTPContext(BaseContext):
         @param uri: server rooted uri e.g /scriptname/pagename.
                     It must start with a slash. Must be ascii and url encoded.
         """
-        import urlparse
-        scheme = urlparse.urlparse(uri)[0]
+        import urllib.parse
+        scheme = urllib.parse.urlparse(uri)[0]
         if scheme:
             return uri
 
@@ -443,8 +443,8 @@ class ScriptContext(AllContext):
 
     def write(self, *data):
         for d in data:
-            if isinstance(d, unicode):
-                d = d.encode(config.charset)
-            else:
+            if isinstance(d, bytes):
+                d = d.decode(config.charset)
+            elif not isinstance(d, str):
                 d = str(d)
             sys.stdout.write(d)

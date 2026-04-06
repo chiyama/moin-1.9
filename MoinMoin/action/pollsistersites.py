@@ -10,7 +10,7 @@
     @license: GNU GPL, see COPYING for details.
 """
 
-import time, urllib
+import time, urllib.request, urllib.parse, urllib.error
 
 from MoinMoin import caching
 from MoinMoin.util import timefuncs
@@ -25,7 +25,7 @@ def execute(pagename, request):
             data = cache.content()
         else:
             data = {'lastmod': ''}
-        uo = urllib.URLopener()
+        uo = urllib.request.URLopener()
         uo.version = 'MoinMoin SisterPage list fetcher 1.0'
         lastmod = data['lastmod']
         if lastmod:
@@ -49,7 +49,8 @@ def execute(pagename, request):
             data['sisterpages'] = sisterpages
             cache.update(data)
             status.append(u"Site: %s Status: Updated. Pages: %d" % (sistername, len(sisterpages)))
-        except IOError, (title, code, msg, headers): # code e.g. 304
+        except IOError as xxx_todo_changeme: # code e.g. 304
+            (title, code, msg, headers) = xxx_todo_changeme.args # code e.g. 304
             status.append(u"Site: %s Status: Not updated." % sistername)
         except TypeError: # catch bug in python 2.5: "EnvironmentError expected at most 3 arguments, got 4"
             status.append(u"Site: %s Status: Not updated." % sistername)

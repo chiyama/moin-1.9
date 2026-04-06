@@ -151,7 +151,7 @@ class Page(object):
         self.include_self = kw.get('include_self', 0)
 
         formatter = kw.get('formatter', None)
-        if isinstance(formatter, (str, unicode)): # mimetype given
+        if isinstance(formatter, (str, bytes)): # mimetype given
             mimetype = str(formatter)
             self.formatter = None
             self.output_mimetype = mimetype
@@ -210,7 +210,7 @@ class Page(object):
             # try to open file
             try:
                 f = codecs.open(self._text_filename(), 'rb', config.charset)
-            except IOError, er:
+            except IOError as er:
                 import errno
                 if er.errno in [errno.ENOENT, errno.ENAMETOOLONG, ]:
                     # ENOENT: doesn't exist, file not found
@@ -299,7 +299,7 @@ class Page(object):
         """
         revfilename = os.path.join(pagedir, 'current')
         try:
-            revfile = file(revfilename)
+            revfile = open(revfilename)
             revstr = revfile.read().strip()
             revfile.close()
             rev = int(revstr)
@@ -491,7 +491,7 @@ class Page(object):
                 dirname = fullpath
             try:
                 os.makedirs(dirname)
-            except OSError, err:
+            except OSError as err:
                 if not os.path.exists(dirname):
                     raise
         return underlay, fullpath
@@ -679,7 +679,7 @@ class Page(object):
 
         try:
             return os.path.getsize(self._text_filename(rev=rev))
-        except EnvironmentError, e:
+        except EnvironmentError as e:
             import errno
             if e.errno in [errno.ENOENT, errno.ENAMETOOLONG, ]:
                 return 0
@@ -738,7 +738,7 @@ class Page(object):
         @rtype: str
         @return: complete url of this page, including scriptname
         """
-        assert(isinstance(anchor, (type(None), str, unicode)))
+        assert(isinstance(anchor, (type(None), str, bytes)))
         # Create url, excluding scriptname
         url = wikiutil.quoteWikinameURL(self.page_name)
         if querystr:
@@ -1174,7 +1174,7 @@ class Page(object):
         if self.hilite_re:
             try:
                 self.formatter.set_highlight_re(self.hilite_re)
-            except re.error, err:
+            except re.error as err:
                 request.theme.add_msg(_('Invalid highlighting regular expression "%(regex)s": %(error)s') % {
                                           'regex': wikiutil.escape(self.hilite_re),
                                           'error': wikiutil.escape(str(err)),
@@ -1188,7 +1188,7 @@ class Page(object):
                             'switch_link': ''.join([
                                 request.formatter.url(1, request.getQualifiedURL(
                                    self.url(request, dict([i for i in
-                                   request.values.iteritems()
+                                   list(request.values.items())
                                    if i[0] != 'highlight'])))),
                                 _(u"Switch to non-highlighted view"),
                                 request.formatter.url(0)
@@ -1424,13 +1424,13 @@ class Page(object):
             try:
                 code = self.loadCache(request)
                 self.execute(request, parser, code)
-            except Exception, e:
+            except Exception as e:
                 if not is_cache_exception(e):
                     raise
                 try:
                     code = self.makeCache(request, parser)
                     self.execute(request, parser, code)
-                except Exception, e:
+                except Exception as e:
                     if not is_cache_exception(e):
                         raise
                     logging.error('page cache failed after creation')
@@ -1454,7 +1454,7 @@ class Page(object):
             if hasattr(MoinMoin, '__loader__'):
                 __file__ = os.path.join(MoinMoin.__loader__.archive, 'dummy')
             try:
-                exec code
+                exec(code)
             except "CacheNeedsUpdate": # convert the exception
                 raise Exception("CacheNeedsUpdate")
         finally:
@@ -1474,7 +1474,7 @@ class Page(object):
             # Bad marshal data, must update the cache.
             # See http://docs.python.org/lib/module-marshal.html
             raise Exception('CacheNeedsUpdate')
-        except Exception, err:
+        except Exception as err:
             logging.info('failed to load "%s" cache: %s' %
                         (self.page_name, str(err)))
             raise Exception('CacheNeedsUpdate')
@@ -1885,7 +1885,7 @@ class RootPage(Page):
             for name in cachedlist:
                 # First, custom filter - exists and acl check are very
                 # expensive!
-                if filter and not filter(name):
+                if filter and not list(filter(name)):
                     continue
 
                 page = Page(request, name)
@@ -1907,7 +1907,7 @@ class RootPage(Page):
                 else:
                     pages.append(name)
         else:
-            pages = cachedlist.keys()
+            pages = list(cachedlist.keys())
 
         request.clock.stop('getPageList')
         return pages

@@ -139,7 +139,7 @@ def convertUsers(srcdir, dstdir):
             f = codecs.open(dstfile, 'wb', charset)
             f.write(text)
             f.close()
-            print "Converted '%s' to '%s'" % (srcfile, dstfile)
+            print(("Converted '%s' to '%s'" % (srcfile, dstfile)))
 
 
 if __name__ == '__main__':

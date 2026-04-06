@@ -22,12 +22,12 @@
 """
 
 import re
-import StringIO
+import io
 from MoinMoin import config, wikiutil
 from MoinMoin.macro import Macro
 from MoinMoin import config
-from _creole import Parser as CreoleParser
-from _creole import Rules as CreoleRules
+from ._creole import Parser as CreoleParser
+from ._creole import Rules as CreoleRules
 
 Dependencies = []
 
@@ -416,7 +416,7 @@ class Emitter:
             # and *sometimes* try to write it directly. We need to take both
             # cases into account!
             lines = node.content.split(u'\n')
-            buf = StringIO.StringIO()
+            buf = io.StringIO()
             try:
                 try:
                     self.request.redirect(buf)

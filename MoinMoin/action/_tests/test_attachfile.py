@@ -6,7 +6,7 @@
                 2007-2008 MoinMoin:ReimarBauer
     @license: GNU GPL, see COPYING for details.
 """
-import os, StringIO
+import os, io
 from MoinMoin.action import AttachFile
 from MoinMoin.PageEditor import PageEditor
 from MoinMoin._tests import become_trusted, create_page, nuke_page
@@ -40,7 +40,7 @@ class TestAttachFile:
         create_page(self.request, self.pagename, u"FooBar!")
         data = "Test content"
 
-        filecontent = StringIO.StringIO(data)
+        filecontent = io.StringIO(data)
 
         AttachFile.add_attachment(self.request, self.pagename, filename, filecontent, True)
         exists = AttachFile.exists(self.request, self.pagename, filename)

@@ -47,7 +47,7 @@ class FormatterBase:
                       re.escape before passing generic strings!) or a compiled
                       re object. raises re.error for invalid re.
         """
-        if isinstance(hi_re, (str, unicode)):
+        if isinstance(hi_re, (str, bytes)):
             hi_re = re.compile(hi_re, re.U + re.IGNORECASE)
         self._highlight_re = hi_re
 
@@ -133,7 +133,7 @@ class FormatterBase:
             try:
                 # rU: universal newline support so that even a \r is considered a valid line separator.
                 # CSV exported by office (on Mac?) has \r line separators.
-                content = file(fpath, 'rU').read()
+                content = open(fpath, 'r').read()
                 # Try to decode text. It might return junk, but we don't
                 # have enough information with attachments.
                 content = wikiutil.decodeUnknownInput(content)
@@ -310,8 +310,8 @@ class FormatterBase:
         # call the macro
         try:
             return macro_obj.execute(name, args)
-        except ImportError, err:
-            errmsg = unicode(err)
+        except ImportError as err:
+            errmsg = str(err)
             if not name in errmsg:
                 raise
             if markup:

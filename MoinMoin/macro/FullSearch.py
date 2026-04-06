@@ -114,7 +114,7 @@ def execute(macro, needle, titlesearch=False, case=False):
                     highlight_titles = val
                 else:
                     err = _(u"Unknown macro parameter: %s.") % arg[0]
-            elif isinstance(arg, basestring):
+            elif isinstance(arg, str):
                 if not needle_found:
                     needle_found = True
                     needle = arg

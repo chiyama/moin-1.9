@@ -10,7 +10,7 @@
                 2007-2009 MoinMoin:ReimarBauer
     @license: GNU GPL, see COPYING for details.
 """
-import cStringIO
+import io
 import os
 import zipfile
 from datetime import datetime
@@ -57,7 +57,7 @@ class PackagePages:
                 raise ActionError
 
             self.package()
-        except ActionError, e:
+        except ActionError as e:
             return self.page.send_page()
 
     def package(self):
@@ -80,7 +80,7 @@ class PackagePages:
             raise ActionError
 
         request = self.request
-        filelike = cStringIO.StringIO()
+        filelike = io.StringIO()
         package = self.collectpackage(unpackLine(pagelist, ","), filelike, target, include_attachments)
         request.headers['Content-Type'] = 'application/zip'
         request.headers['Content-Length'] = filelike.tell()

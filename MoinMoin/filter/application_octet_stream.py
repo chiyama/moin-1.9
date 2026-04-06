@@ -32,25 +32,23 @@ blacklist = ('.iso', '.nrg', # CD/DVD images
 
 import os, string
 
-# builds a list of all characters:
-norm = string.maketrans('', '')
-
-# builds a list of all non-alphanumeric characters:
-non_alnum = string.translate(norm, norm, string.letters+string.digits)
-
-# translate table that replaces all non-alphanumeric by blanks:
-trans_nontext = string.maketrans(non_alnum, ' '*len(non_alnum))
+# Build a translation table that replaces all non-alphanumeric characters with spaces.
+# In Python 3, string.maketrans was removed; use str.maketrans and bytes.maketrans instead.
+_alnum = (string.ascii_letters + string.digits).encode('ascii')
+_allbytes = bytes(range(256))
+_non_alnum = bytes(b for b in _allbytes if b not in _alnum)
+trans_nontext = bytes.maketrans(_non_alnum, b' ' * len(_non_alnum))
 
 def execute(indexobj, filename):
     fileext = os.path.splitext(filename)[1]
     if fileext.lower() in blacklist:
         return u''
-    f = file(filename, "rb")
+    f = open(filename, "rb")
     data = f.read(maxread)
     f.close()
     data = data.translate(trans_nontext) # replace non-ascii by blanks
     data = data.split() # removes lots of blanks
     data = [s for s in data if len(s) >= minwordlen] # throw away too short stuff
-    data = ' '.join(data)
+    data = b' '.join(data)
     return data.decode('ascii')
 

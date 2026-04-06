@@ -144,9 +144,9 @@ class Rules:
                            self.escape, self.char]
         if wiki_words:
             import unicodedata
-            up_case = u''.join(unichr(i) for i in xrange(sys.maxunicode)
+            up_case = u''.join(unichr(i) for i in range(sys.maxunicode)
                                if unicodedata.category(unichr(i))=='Lu')
-            self.wiki = ur'''(?P<wiki>[%s]\w+[%s]\w+)''' % (up_case, up_case)
+            self.wiki = r'''(?P<wiki>[%s]\w+[%s]\w+)''' % (up_case, up_case)
             inline_elements.insert(3, self.wiki)
         self.inline_re = c('|'.join(inline_elements), re.X | re.U)
 
@@ -388,7 +388,7 @@ class Parser:
         """Invoke appropriate _*_repl method. Called for every matched group."""
 
         groups = match.groupdict()
-        for name, text in groups.iteritems():
+        for name, text in list(groups.items()):
             if text is not None:
                 replace = getattr(self, '_%s_repl' % name)
                 replace(groups)

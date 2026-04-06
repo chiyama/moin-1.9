@@ -49,7 +49,7 @@ def _importConfigModule(name):
         mtime = os.path.getmtime(module.__file__)
     except ImportError:
         raise
-    except IndentationError, err:
+    except IndentationError as err:
         logging.exception('Your source code / config file is not correctly indented!')
         msg = """IndentationError: %(err)s
 
@@ -60,7 +60,7 @@ You have to use four spaces at the beginning of the line mostly.
     'err': err,
 }
         raise error.ConfigurationError(msg)
-    except Exception, err:
+    except Exception as err:
         logging.exception('An exception happened.')
         msg = '%s: %s' % (err.__class__.__name__, str(err))
         raise error.ConfigurationError(msg)
@@ -80,7 +80,7 @@ def _url_re_list():
     if _url_re_cache is None:
         try:
             farmconfig, _farmconfig_mtime = _importConfigModule('farmconfig')
-        except ImportError, err:
+        except ImportError as err:
             if 'farmconfig' in str(err):
                 # we failed importing farmconfig
                 logging.debug("could not import farmconfig, mapping all URLs to wikiconfig")
@@ -125,7 +125,7 @@ def _makeConfig(name):
         cfg = configClass(name)
         cfg.cfg_mtime = max(mtime, _farmconfig_mtime)
         logging.info("using wiki config: %s" % os.path.abspath(module.__file__))
-    except ImportError, err:
+    except ImportError as err:
         logging.exception('Could not import.')
         msg = """ImportError: %(err)s
 
@@ -141,7 +141,7 @@ module name does not include the ".py" suffix.
     'err': err,
 }
         raise error.ConfigurationError(msg)
-    except AttributeError, err:
+    except AttributeError as err:
         logging.exception('An exception occurred.')
         msg = """AttributeError: %(err)s
 
@@ -367,7 +367,7 @@ class ConfigFunctionality(object):
         if self.xapian_search:
             try:
                 import xapian
-            except ImportError, err:
+            except ImportError as err:
                 self.xapian_search = False
                 logging.error("xapian_search was auto-disabled because python-xapian is not installed [%s]." % str(err))
 
@@ -383,7 +383,7 @@ class ConfigFunctionality(object):
 
         # if we are to use the jabber bot, instantiate a server object for future use
         if self.jabber_enabled:
-            from xmlrpclib import Server
+            from xmlrpc.client import Server
             self.notification_server = Server(self.notification_bot_uri, )
 
         # Cache variables for the properties below
@@ -439,11 +439,11 @@ class ConfigFunctionality(object):
         if self.passlib_support:
             try:
                 from passlib.context import CryptContext
-            except ImportError, err:
+            except ImportError as err:
                 raise error.ConfigurationError("Wiki is configured to use passlib, but importing passlib failed [%s]!" % str(err))
             try:
                 self.cache.pwd_context = CryptContext(**self.passlib_crypt_context)
-            except (ValueError, KeyError, TypeError, UserWarning), err:
+            except (ValueError, KeyError, TypeError, UserWarning) as err:
                 # ValueError: wrong configuration values
                 # KeyError: unsupported hash (seen with passlib 1.3)
                 # TypeError: configuration value has wrong type
@@ -460,7 +460,7 @@ class ConfigFunctionality(object):
         secret = ''
         for varname in varnames:
             var = getattr(self, varname, None)
-            if isinstance(var, (str, unicode)):
+            if isinstance(var, (str, bytes)):
                 secret += repr(var)
         return secret
 
@@ -539,57 +539,10 @@ configuration for typos before requesting support or reporting a bug.
             raise error.ConfigurationError(msg)
 
     def _decode(self):
-        """ Try to decode certain names, ignore unicode values
-
-        Try to decode str using utf-8. If the decode fail, raise FatalError.
-
-        Certain config variables should contain unicode values, and
-        should be defined with u'text' syntax. Python decode these if
-        the file have a 'coding' line.
-
-        This will allow utf-8 users to use simple strings using, without
-        using u'string'. Other users will have to use u'string' for
-        these names, because we don't know what is the charset of the
-        config files.
+        """ In Python 3, all strings are unicode, so no decoding is needed.
+        This method is kept as a no-op for compatibility.
         """
-        charset = 'utf-8'
-        message = u"""
-"%(name)s" configuration variable is a string, but should be
-unicode. Use %(name)s = u"value" syntax for unicode variables.
-
-Also check your "-*- coding -*-" line at the top of your configuration
-file. It should match the actual charset of the configuration file.
-"""
-
-        decode_names = (
-            'sitename', 'interwikiname', 'user_homewiki', 'logo_string', 'navi_bar',
-            'page_front_page', 'page_category_regex', 'page_dict_regex',
-            'page_group_regex', 'page_template_regex', 'page_license_page',
-            'page_local_spelling_words', 'acl_rights_default',
-            'acl_rights_before', 'acl_rights_after', 'mail_from',
-            'quicklinks_default', 'subscribed_pages_default',
-            )
-
-        for name in decode_names:
-            attr = getattr(self, name, None)
-            if attr:
-                # Try to decode strings
-                if isinstance(attr, str):
-                    try:
-                        setattr(self, name, unicode(attr, charset))
-                    except UnicodeError:
-                        raise error.ConfigurationError(message %
-                                                       {'name': name})
-                # Look into lists and try to decode strings inside them
-                elif isinstance(attr, list):
-                    for i in xrange(len(attr)):
-                        item = attr[i]
-                        if isinstance(item, str):
-                            try:
-                                attr[i] = unicode(item, charset)
-                            except UnicodeError:
-                                raise error.ConfigurationError(message %
-                                                               {'name': name})
+        pass
 
     def _check_directories(self):
         """ Make sure directories are accessible
@@ -641,7 +594,7 @@ also the spelling of the directory name.
             imp.acquire_lock()
             try:
                 for pdir in plugin_dirs:
-                    csum = 'p_%s' % hashlib.new('sha1', pdir).hexdigest()
+                    csum = 'p_%s' % hashlib.new('sha1', pdir.encode('utf-8')).hexdigest()
                     modname = '%s.%s' % (self.siteid, csum)
                     # If the module is not loaded, try to load it
                     if not modname in sys.modules:
@@ -661,7 +614,7 @@ also the spelling of the directory name.
                         self._plugin_modules.append(modname)
             finally:
                 imp.release_lock()
-        except ImportError, err:
+        except ImportError as err:
             msg = """
 Could not import plugin package "%(path)s" because of ImportError:
 %(err)s.
@@ -681,7 +634,7 @@ that the data/plugin directory has an __init__.py file.
         them from this base class.
         """
         # user checkbox defaults
-        for key, value in DefaultConfig.user_checkbox_defaults.items():
+        for key, value in list(DefaultConfig.user_checkbox_defaults.items()):
             if key not in self.user_checkbox_defaults:
                 self.user_checkbox_defaults[key] = value
 
@@ -728,8 +681,8 @@ def _default_password_checker(cfg, request, username, password,
        username_lower in password_lower or password_lower in username_lower:
         return _("Password is too easy (password contains name or name contains password).")
 
-    keyboards = (ur"`1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm,./", # US kbd
-                 ur"^1234567890ß´qwertzuiopü+asdfghjklöä#yxcvbnm,.-", # german kbd
+    keyboards = (r"`1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm,./", # US kbd
+                 r"^1234567890ß´qwertzuiopï¿½+asdfghjklï¿½ï¿½#yxcvbnm,.-", # german kbd
                 ) # add more keyboards!
     for kbd in keyboards:
         rev_kbd = kbd[::-1]
@@ -1070,13 +1023,13 @@ options_no_group_name = {
     # the group 'all' shall match all, while the group 'key' shall match the key only
     # e.g. CategoryFoo -> group 'all' ==  CategoryFoo, group 'key' == Foo
     # moin's code will add ^ / $ at beginning / end when needed
-    ('page_category_regex', ur'(?P<all>Category(?P<key>(?!Template)\S+))',
+    ('page_category_regex', r'(?P<all>Category(?P<key>(?!Template)\S+))',
      'Pagenames exactly matching this regex are regarded as Wiki categories [Unicode]'),
-    ('page_dict_regex', ur'(?P<all>(?P<key>\S+)Dict)',
+    ('page_dict_regex', r'(?P<all>(?P<key>\S+)Dict)',
      'Pagenames exactly matching this regex are regarded as pages containing variable dictionary definitions [Unicode]'),
-    ('page_group_regex', ur'(?P<all>(?P<key>\S+)Group)',
+    ('page_group_regex', r'(?P<all>(?P<key>\S+)Group)',
      'Pagenames exactly matching this regex are regarded as pages containing group definitions [Unicode]'),
-    ('page_template_regex', ur'(?P<all>(?P<key>\S+)Template)',
+    ('page_template_regex', r'(?P<all>(?P<key>\S+)Template)',
      'Pagenames exactly matching this regex are regarded as pages containing templates for new pages [Unicode]'),
 
     ('page_local_spelling_words', u'LocalSpellingWords',

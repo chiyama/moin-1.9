@@ -22,8 +22,8 @@ from MoinMoin import config, macro, wikiutil
 from MoinMoin.action import AttachFile
 from MoinMoin.Page import Page
 
-import wikiutil160a
-from text_moin160a_wiki import Parser
+from . import wikiutil160a
+from .text_moin160a_wiki import Parser
 
 QUOTE_CHARS = u"'\""
 
@@ -180,13 +180,13 @@ class Converter(Parser):
 
     def _macro_repl(self, word):
         # we use [[...]] for links now, macros will be <<...>>
-        macro_rule = ur"""
+        macro_rule = r"""
             \[\[
             (?P<macro_name>\w+)
             (\((?P<macro_args>.*?)\))?
             \]\]
         """
-        word = unicode(word) # XXX why is word not unicode before???
+        word = str(word) # XXX why is word not unicode before???
         m = re.match(macro_rule, word, re.X|re.U)
         macro_name = m.group('macro_name')
         macro_args = m.group('macro_args')
@@ -446,7 +446,7 @@ class Converter(Parser):
     def replace(self, match):
         """ Replace match using type name """
         result = []
-        for _type, hit in match.groupdict().items():
+        for _type, hit in list(match.groupdict().items()):
             if hit is not None and not _type in ["hmarker", ]:
                 # Get replace method and replace hit
                 replace = getattr(self, '_' + _type + '_repl')
@@ -472,7 +472,7 @@ class Converter(Parser):
         # prepare regex patterns
         rules = self.formatting_rules.replace('\n', '|')
         if self.request.cfg.bang_meta:
-            rules = ur'(?P<notword>!%(word_rule)s)|%(rules)s' % {
+            rules = r'(?P<notword>!%(word_rule)s)|%(rules)s' % {
                 'word_rule': self.word_rule,
                 'rules': rules,
             }

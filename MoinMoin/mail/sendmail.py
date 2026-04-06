@@ -21,7 +21,7 @@ _transdict = {"AT": "@", "DOT": ".", "DASH": "-"}
 def encodeAddress(address, charset):
     """ Encode email address to enable non ascii names
 
-    e.g. '"Jürgen Hermann" <jh@web.de>'. According to the RFC, the name
+    e.g. '"Jï¿½rgen Hermann" <jh@web.de>'. According to the RFC, the name
     part should be encoded, the address should not.
 
     @param address: email address, possibly using '"name" <address>' format
@@ -32,7 +32,7 @@ def encodeAddress(address, charset):
     @rtype: string
     @return: encoded address
     """
-    assert isinstance(address, unicode)
+    assert isinstance(address, str)
     composite = re.compile(r'(?P<phrase>.*?)(?P<blanks>\s*)\<(?P<addr>.*)\>', re.UNICODE)
     match = composite.match(address)
     if match:
@@ -106,7 +106,7 @@ def sendmail(request, to, subject, text, mail_from=None):
 
     # Create message headers
     # Don't expose emails addreses of the other subscribers, instead we
-    # use the same mail_from, e.g. u"Jürgen Wiki <noreply@mywiki.org>"
+    # use the same mail_from, e.g. u"Jï¿½rgen Wiki <noreply@mywiki.org>"
     address = encodeAddress(mail_from, charset)
     msg['From'] = address
     msg['To'] = address
@@ -149,13 +149,13 @@ def sendmail(request, to, subject, text, mail_from=None):
                 except AttributeError:
                     # in case the connection failed, SMTP has no "sock" attribute
                     pass
-        except UnicodeError, e:
+        except UnicodeError as e:
             logging.exception("unicode error [%r -> %r]" % (mail_from, to, ))
             return (0, str(e))
-        except smtplib.SMTPException, e:
+        except smtplib.SMTPException as e:
             logging.exception("smtp mail failed with an exception.")
             return (0, str(e))
-        except (os.error, socket.error), e:
+        except (os.error, socket.error) as e:
             logging.exception("smtp mail failed with an exception.")
             return (0, _("Connection to mailserver '%(server)s' failed: %(reason)s") % {
                 'server': cfg.mail_smarthost,
@@ -191,7 +191,7 @@ def encodeSpamSafeEmail(email_address, obfuscation_text=''):
     """
     address = email_address.lower()
     # uppercase letters will be stripped by decodeSpamSafeEmail
-    for word, sign in _transdict.items():
+    for word, sign in list(_transdict.items()):
         address = address.replace(sign, ' %s ' % word)
     if obfuscation_text.isalpha():
         # is the obfuscation_text alphabetic

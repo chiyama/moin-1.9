@@ -80,7 +80,7 @@ General syntax: moin [options] index build [build-options]
         self.init_request()
         # Do we have additional files to index?
         if self.options.file_list:
-            self.files = file(self.options.file_list)
+            self.files = open(self.options.file_list)
         else:
             self.files = None
         self.command()
@@ -125,7 +125,7 @@ class PluginScript(IndexScript):
             idx_new = XapianIndex(self.request, name='index.new').db
             try:
                 shutil.rmtree(idx_old)
-            except OSError, err:
+            except OSError as err:
                 if err.errno != errno.ENOENT: # ignore it if we have no current index
                     raise
             os.rename(idx_new, idx_old)

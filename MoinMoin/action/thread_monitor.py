@@ -8,7 +8,7 @@
     @license: GNU GPL, see COPYING for details.
 """
 import os, time
-from StringIO import StringIO
+from io import StringIO
 
 from MoinMoin import Page, wikiutil
 from MoinMoin.util import thread_monitor
@@ -27,7 +27,7 @@ def execute_fs(pagename, request):
         data = s.getvalue()
         timestamp = time.time()
         dump_fname = os.path.join(request.cfg.data_dir, "tm_%d.log" % timestamp)
-        f = file(dump_fname, "w")
+        f = open(dump_fname, "w")
         f.write(data)
         f.close()
     else:

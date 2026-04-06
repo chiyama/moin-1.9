@@ -158,6 +158,6 @@ General syntax: moin [options] maint globaledit [globaledit-options]
                 origtext = p.get_raw_body()
                 changedtext = self.do_edit(pagename, origtext)
                 if changedtext and changedtext != origtext:
-                    print "Writing %s ..." % repr(pagename)
+                    print(("Writing %s ..." % repr(pagename)))
                     p._write_file(changedtext)
 

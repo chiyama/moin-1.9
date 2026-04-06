@@ -1,44 +1,41 @@
 # taken from Amos' XML-RPC HowTo:
 
-import xmlrpclib, httplib
-from base64 import encodestring
+import xmlrpc.client
+import http.client
+from base64 import encodebytes
 
-class BasicAuthTransport(xmlrpclib.Transport):
+class BasicAuthTransport(xmlrpc.client.Transport):
     def __init__(self, username=None, password=None):
+        super().__init__()
         self.username = username
         self.password = password
         self.verbose = 0
 
-    def request(self, host, handler, request_body, **kw):
+    def request(self, host, handler, request_body, verbose=False):
         # issue XML-RPC request
-        h = httplib.HTTP(host)
-        h.putrequest("POST", handler)
+        h = http.client.HTTPConnection(host)
 
-        # required by HTTP/1.1
-        h.putheader("Host", host)
-
-        # required by XML-RPC
-        h.putheader("User-Agent", self.user_agent)
-        h.putheader("Content-Type", "text/xml")
-        h.putheader("Content-Length", str(len(request_body)))
+        headers = {
+            'Host': host,
+            'User-Agent': self.user_agent,
+            'Content-Type': 'text/xml',
+            'Content-Length': str(len(request_body)),
+        }
 
         # basic auth
         if self.username is not None and self.password is not None:
-            authhdr = "Basic %s" % encodestring("%s:%s" % (self.username, self.password)).replace("\012", "")
-            h.putheader("Authorization", authhdr)
-        h.endheaders()
+            credentials = ("%s:%s" % (self.username, self.password)).encode('utf-8')
+            authhdr = "Basic %s" % encodebytes(credentials).decode('ascii').replace("\n", "")
+            headers['Authorization'] = authhdr
 
-        if request_body:
-            h.send(request_body)
+        h.request("POST", handler, request_body, headers)
+        response = h.getresponse()
 
-        errcode, errmsg, headers = h.getreply()
-
-        if errcode != 200:
-            raise xmlrpclib.ProtocolError(
+        if response.status != 200:
+            raise xmlrpc.client.ProtocolError(
                 host + handler,
-                errcode, errmsg,
-                headers
+                response.status, response.reason,
+                dict(response.getheaders())
                 )
 
-        return self.parse_response(h.getfile())
-
+        return self.parse_response(response)

@@ -76,7 +76,7 @@ General syntax: moin [options] maint mkpagepacks [mkpagepacks-options]
                 if lang != 'en':
                     pageset -= pageset_orig
                 if pageset:
-                    print key, len(pageset)
+                    print((key, len(pageset)))
                     pageSets[key] = pageset
                     packaged_pages |= pageset
 
@@ -147,7 +147,7 @@ General syntax: moin [options] maint mkpagepacks [mkpagepacks-options]
     def mainloop(self):
         # self.options.wiki_url = 'localhost/'
         if self.options.wiki_url and '.' in self.options.wiki_url:
-            print "NEVER EVER RUN THIS ON A REAL WIKI!!! This must be run on a local testwiki."
+            print("NEVER EVER RUN THIS ON A REAL WIKI!!! This must be run on a local testwiki.")
             return
 
         self.init_request() # this request will work on a test wiki in tests/wiki/ directory
@@ -156,14 +156,14 @@ General syntax: moin [options] maint mkpagepacks [mkpagepacks-options]
 
         if not ('tests/wiki' in request.cfg.data_dir.replace("\\", "/") and 'tests/wiki' in request.cfg.data_underlay_dir.replace("\\", "/")):
             import sys
-            print sys.path
-            print "NEVER EVER RUN THIS ON A REAL WIKI!!! This must be run on a local testwiki."
+            print((sys.path))
+            print("NEVER EVER RUN THIS ON A REAL WIKI!!! This must be run on a local testwiki.")
             return
 
-        print "Building page sets ..."
+        print("Building page sets ...")
         pageSets = self.buildPageSets()
 
-        print "Creating packages ..."
+        print("Creating packages ...")
         package_path = os.path.join('tests', 'wiki', 'underlay', 'pages', 'LanguageSetup', 'attachments')
         try:
             # create attachment dir in case it is not there:
@@ -171,11 +171,11 @@ General syntax: moin [options] maint mkpagepacks [mkpagepacks-options]
         except OSError:
             pass
         generate_filename = lambda name: os.path.join(package_path, '%s.zip' % name)
-        [self.packagePages(list(pages), generate_filename(name), "ReplaceUnderlay") for name, pages in pageSets.items()]
+        [self.packagePages(list(pages), generate_filename(name), "ReplaceUnderlay") for name, pages in list(pageSets.items())]
 
-        print "Removing pagedirs of packaged pages ..."
+        print("Removing pagedirs of packaged pages ...")
         dontkill = set(['LanguageSetup'])
-        [self.removePages(list(pages - dontkill)) for name, pages in pageSets.items()]
+        [self.removePages(list(pages - dontkill)) for name, pages in list(pageSets.items())]
 
-        print "Finished."
+        print("Finished.")
 

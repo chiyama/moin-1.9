@@ -38,81 +38,79 @@ apache_md5_crypt() provides a function compatible with Apache's
 
 """
 
-MAGIC = '$1$'                   # Magic string
-ITOA64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+import hashlib
 
-try:
-    import hashlib
-    hash_md5 = hashlib.md5
-except ImportError:
-    # maybe we have python < 2.5 (no hashlib)
-    import md5
-    hash_md5 = md5.new
+MAGIC = b'$1$'
+ITOA64 = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 
-def to64 (v, n):
-    ret = ''
+def _to_bytes(s):
+    """Convert string to bytes if needed."""
+    if isinstance(s, str):
+        return s.encode('utf-8')
+    return s
+
+
+def to64(v, n):
+    ret = b''
     while (n - 1 >= 0):
         n = n - 1
-        ret = ret + ITOA64[v & 0x3f]
+        ret = ret + bytes([ITOA64[v & 0x3f]])
         v = v >> 6
     return ret
 
 
-def apache_md5_crypt (pw, salt):
+def apache_md5_crypt(pw, salt):
     # change the Magic string to match the one used by Apache
-    return unix_md5_crypt(pw, salt, '$apr1$')
+    return unix_md5_crypt(pw, salt, b'$apr1$')
 
 
 def unix_md5_crypt(pw, salt, magic=None):
+    pw = _to_bytes(pw)
+    salt = _to_bytes(salt)
 
-    if magic==None:
+    if magic is None:
         magic = MAGIC
 
     # Take care of the magic string if present
     if salt[:len(magic)] == magic:
         salt = salt[len(magic):]
 
-
     # salt can have up to 8 characters:
-    import string
-    salt = string.split(salt, '$', 1)[0]
+    salt = salt.split(b'$', 1)[0]
     salt = salt[:8]
 
     ctx = pw + magic + salt
 
-    md5 = hash_md5()
+    md5 = hashlib.md5()
     md5.update(pw + salt + pw)
     final = md5.digest()
 
-    for pl in range(len(pw),0,-16):
+    for pl in range(len(pw), 0, -16):
         if pl > 16:
             ctx = ctx + final[:16]
         else:
             ctx = ctx + final[:pl]
-
 
     # Now the 'weird' xform (??)
 
     i = len(pw)
     while i:
         if i & 1:
-            ctx = ctx + chr(0)  #if ($i & 1) { $ctx->add(pack("C", 0)); }
+            ctx = ctx + b'\x00'
         else:
-            ctx = ctx + pw[0]
+            ctx = ctx + pw[0:1]
         i = i >> 1
 
-    md5 = hash_md5()
+    md5 = hashlib.md5()
     md5.update(ctx)
     final = md5.digest()
 
     # The following is supposed to make
     # things run slower.
 
-    # my question: WTF???
-
     for i in range(1000):
-        ctx1 = ''
+        ctx1 = b''
         if i & 1:
             ctx1 = ctx1 + pw
         else:
@@ -129,45 +127,41 @@ def unix_md5_crypt(pw, salt, magic=None):
         else:
             ctx1 = ctx1 + pw
 
-
-        md5 = hash_md5()
+        md5 = hashlib.md5()
         md5.update(ctx1)
         final = md5.digest()
 
-
     # Final xform
 
-    passwd = ''
+    passwd = b''
 
-    passwd = passwd + to64((int(ord(final[0])) << 16)
-                           |(int(ord(final[6])) << 8)
-                           |(int(ord(final[12]))),4)
+    passwd = passwd + to64((final[0] << 16)
+                           |(final[6] << 8)
+                           |(final[12]), 4)
 
-    passwd = passwd + to64((int(ord(final[1])) << 16)
-                           |(int(ord(final[7])) << 8)
-                           |(int(ord(final[13]))), 4)
+    passwd = passwd + to64((final[1] << 16)
+                           |(final[7] << 8)
+                           |(final[13]), 4)
 
-    passwd = passwd + to64((int(ord(final[2])) << 16)
-                           |(int(ord(final[8])) << 8)
-                           |(int(ord(final[14]))), 4)
+    passwd = passwd + to64((final[2] << 16)
+                           |(final[8] << 8)
+                           |(final[14]), 4)
 
-    passwd = passwd + to64((int(ord(final[3])) << 16)
-                           |(int(ord(final[9])) << 8)
-                           |(int(ord(final[15]))), 4)
+    passwd = passwd + to64((final[3] << 16)
+                           |(final[9] << 8)
+                           |(final[15]), 4)
 
-    passwd = passwd + to64((int(ord(final[4])) << 16)
-                           |(int(ord(final[10])) << 8)
-                           |(int(ord(final[5]))), 4)
+    passwd = passwd + to64((final[4] << 16)
+                           |(final[10] << 8)
+                           |(final[5]), 4)
 
-    passwd = passwd + to64((int(ord(final[11]))), 2)
+    passwd = passwd + to64(final[11], 2)
 
-
-    return magic + salt + '$' + passwd
+    return (magic + salt + b'$' + passwd).decode('ascii')
 
 
 ## assign a wrapper function:
 md5crypt = unix_md5_crypt
 
 if __name__ == "__main__":
-    print unix_md5_crypt("cat", "hat")
-
+    print(unix_md5_crypt("cat", "hat"))

@@ -10,7 +10,7 @@
 
 """
 
-from py.test import raises
+from pytest import raises
 
 from MoinMoin import security
 from MoinMoin.datastruct import GroupDoesNotExistError
@@ -44,7 +44,7 @@ class GroupsBackendTest(object):
         """
         groups = self.request.groups
 
-        for group, members in self.expanded_groups.iteritems():
+        for group, members in list(self.expanded_groups.items()):
             assert group in groups
             for member in members:
                 assert member in groups[group]
@@ -60,7 +60,7 @@ class GroupsBackendTest(object):
     def test_iter(self):
         groups = self.request.groups
 
-        for group, members in self.expanded_groups.iteritems():
+        for group, members in list(self.expanded_groups.items()):
             returned_members = list(groups[group])
             assert len(returned_members) == len(members)
             for member in members:
@@ -151,10 +151,10 @@ class DictsBackendTest(object):
         expected_dicts = self.dicts
         dicts = self.request.dicts
 
-        for dict_name, expected_dict in expected_dicts.items():
+        for dict_name, expected_dict in list(expected_dicts.items()):
             test_dict = dicts[dict_name]
             assert len(test_dict) == len(expected_dict)
-            for key, value in expected_dict.items():
+            for key, value in list(expected_dict.items()):
                 assert test_dict[key] == value
 
     def test_contains(self):
@@ -184,9 +184,9 @@ class DictsBackendTest(object):
         assert dicts.get(u'SomeNotExistingDict', {}) == {}
 
 
-        for dict_name, expected_dict in self.dicts.items():
+        for dict_name, expected_dict in list(self.dicts.items()):
             test_dict = dicts[dict_name]
-            for key, value in expected_dict.items():
+            for key, value in list(expected_dict.items()):
                 assert u'SomeNotExistingKey' not in test_dict
                 assert test_dict.get(u'SomeNotExistingKey') is None
                 assert test_dict.get(u'SomeNotExistingKey', {}) == {}

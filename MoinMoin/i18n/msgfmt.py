@@ -22,7 +22,7 @@ Options:
     --version
         Display version information and exit.
 
-Written by Martin v. Löwis <loewis@informatik.hu-berlin.de>,
+Written by Martin v. Lï¿½wis <loewis@informatik.hu-berlin.de>,
 refactored / fixed by Thomas Waldmann <tw AT waldmann-edv DOT de>.
 """
 
@@ -106,18 +106,20 @@ class MsgFmt(object):
 
     def generate_mo(self):
         """Return the generated output."""
-        keys = self.messages.keys()
+        keys = list(self.messages.keys())
         # the keys are sorted in the .mo file
         keys.sort()
         offsets = []
-        ids = ''
-        strs = ''
+        ids = b''
+        strs = b''
         for id in keys:
             # For each string, we need size and file offset.  Each string is NUL
             # terminated; the NUL does not count into the size.
-            offsets.append((len(ids), len(id), len(strs), len(self.messages[id])))
-            ids += id + '\0'
-            strs += self.messages[id] + '\0'
+            id_bytes = id.encode('utf-8') if isinstance(id, str) else id
+            msg_bytes = self.messages[id].encode('utf-8') if isinstance(self.messages[id], str) else self.messages[id]
+            offsets.append((len(ids), len(id_bytes), len(strs), len(msg_bytes)))
+            ids += id_bytes + b'\0'
+            strs += msg_bytes + b'\0'
         output = []
         # The header is 7 32-bit unsigned integers.  We don't use hash tables, so
         # the keys start right after the index tables.
@@ -134,49 +136,49 @@ class MsgFmt(object):
             voffsets += [l2, o2 + valuestart]
         offsets = koffsets + voffsets
         output.append(struct.pack("Iiiiiii",
-                             0x950412deL,       # Magic
+                             0x950412de,       # Magic
                              0,                 # Version
                              len(keys),         # # of entries
                              7*4,               # start of key index
                              7*4 + len(keys)*8, # start of value index
                              0, 0))             # size and offset of hash table
-        output.append(array.array("i", offsets).tostring())
+        output.append(array.array("i", offsets).tobytes())
         output.append(ids)
         output.append(strs)
-        return ''.join(output)
+        return b''.join(output)
 
 
 def make(filename, outfile):
     mf = MsgFmt()
     infile, outfile = mf.make_filenames(filename, outfile)
     try:
-        lines = file(infile).readlines()
-    except IOError, msg:
-        print >> sys.stderr, msg
+        lines = open(infile).readlines()
+    except IOError as msg:
+        print(msg, file=sys.stderr)
         sys.exit(1)
     try:
         mf.read_po(lines)
         output = mf.generate_mo()
-    except SyntaxErrorException, msg:
-        print >> sys.stderr, msg
+    except SyntaxErrorException as msg:
+        print(msg, file=sys.stderr)
 
     try:
         open(outfile, "wb").write(output)
-    except IOError, msg:
-        print >> sys.stderr, msg
+    except IOError as msg:
+        print(msg, file=sys.stderr)
 
 
 def usage(code, msg=''):
-    print >> sys.stderr, __doc__
+    print(__doc__, file=sys.stderr)
     if msg:
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
     sys.exit(code)
 
 
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hVo:', ['help', 'version', 'output-file='])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     outfile = None
@@ -185,14 +187,14 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-V', '--version'):
-            print >> sys.stderr, "msgfmt.py", __version__
+            print("msgfmt.py", __version__, file=sys.stderr)
             sys.exit(0)
         elif opt in ('-o', '--output-file'):
             outfile = arg
     # do it
     if not args:
-        print >> sys.stderr, 'No input file given'
-        print >> sys.stderr, "Try `msgfmt --help' for more information."
+        print('No input file given', file=sys.stderr)
+        print("Try `msgfmt --help' for more information.", file=sys.stderr)
         return
 
     for filename in args:

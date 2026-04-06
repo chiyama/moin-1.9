@@ -24,7 +24,7 @@ class TestQueryStringSupport:
     def testParseQueryString(self):
         for qstr, expected_str, expected_unicode in self.tests:
             assert wikiutil.parseQueryString(qstr) == MultiDict(expected_unicode)
-            assert wikiutil.parseQueryString(unicode(qstr)) == MultiDict(expected_unicode)
+            assert wikiutil.parseQueryString(str(qstr)) == MultiDict(expected_unicode)
 
     def testMakeQueryString(self):
         for qstr, in_str, in_unicode in self.tests:
@@ -260,13 +260,13 @@ class TestParamParsing:
             result = wikiutil.parse_quoted_separated(args)
             assert expected == result
             for val in result[0]:
-                assert val is None or isinstance(val, unicode)
-            for val in result[1].keys():
-                assert val is None or isinstance(val, unicode)
-            for val in result[1].values():
-                assert val is None or isinstance(val, unicode)
+                assert val is None or isinstance(val, str)
+            for val in list(result[1].keys()):
+                assert val is None or isinstance(val, str)
+            for val in list(result[1].values()):
+                assert val is None or isinstance(val, str)
             for val in result[2]:
-                assert val is None or isinstance(val, unicode)
+                assert val is None or isinstance(val, str)
 
     def testLimited(self):
         tests = [
@@ -280,13 +280,13 @@ class TestParamParsing:
             result = wikiutil.parse_quoted_separated(args, seplimit=1)
             assert expected == result
             for val in result[0]:
-                assert val is None or isinstance(val, unicode)
-            for val in result[1].keys():
-                assert val is None or isinstance(val, unicode)
-            for val in result[1].values():
-                assert val is None or isinstance(val, unicode)
+                assert val is None or isinstance(val, str)
+            for val in list(result[1].keys()):
+                assert val is None or isinstance(val, str)
+            for val in list(result[1].values()):
+                assert val is None or isinstance(val, str)
             for val in result[2]:
-                assert val is None or isinstance(val, unicode)
+                assert val is None or isinstance(val, str)
 
     def testDoubleNameValueSeparator(self):
         tests = [
@@ -325,7 +325,7 @@ class TestParamParsing:
             result = wikiutil.parse_quoted_separated(args, name_value=False)
             assert expected == result
             for val in result:
-                assert val is None or isinstance(val, unicode)
+                assert val is None or isinstance(val, str)
 
     def testUnitArgument(self):
         result = wikiutil.UnitArgument('7mm', float, ['%', 'mm'])
@@ -642,8 +642,8 @@ class TestArgGetters:
             (u'23.42E-3+3.04i', None, None, 23.42E-3+3.04j),
             (u'3.04i', None, None, 3.04j),
             (u'-3.04i', None, None, -3.04j),
-            (u'-3', None, None, -3L),
-            (u'-300000000000000000000', None, None, -300000000000000000000L),
+            (u'-3', None, None, -3),
+            (u'-300000000000000000000', None, None, -300000000000000000000),
         ]
         for arg, name, default, expected in tests:
             assert wikiutil.get_complex(self.request, arg, name, default) == expected

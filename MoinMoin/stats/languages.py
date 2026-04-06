@@ -33,7 +33,7 @@ def get_data(request):
             data[current_user.language] = data.get(current_user.language, 0) + 1
     if u'' in data:
         data[u'browser'] = data.pop(u'') # In case we have users whose languages aren't detectable.
-    data = [(cnt, current_user_language) for current_user_language, cnt in data.items()]
+    data = [(cnt, current_user_language) for current_user_language, cnt in list(data.items())]
     data.sort()
     data.reverse()
     return data

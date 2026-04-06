@@ -118,7 +118,7 @@ def get_cookie_name(request, name, usage, software='MOIN'):
         ]
         name = '_'.join(url_components)
 
-    elif name is 'siteidmagic':
+    elif name == 'siteidmagic':
         name = request.cfg.siteid  # == config name, unique per farm
 
     return "%s_%s_%s" % (software, usage, name)
@@ -142,7 +142,7 @@ class FileSessionService(SessionService):
         except OSError:
             pass
         return FilesystemSessionStore(path=path, filename_template='%s',
-                                      session_class=MoinSession, mode=0666 & config.umask)
+                                      session_class=MoinSession, mode=0o666 & config.umask)
 
     def get_session(self, request, sid=None):
         if sid is None:

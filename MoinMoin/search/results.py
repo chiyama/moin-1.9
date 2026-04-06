@@ -10,7 +10,7 @@
     @license: GNU GPL, see COPYING for details
 """
 
-import StringIO, time
+import io, time
 
 from MoinMoin import wikiutil
 from MoinMoin.Page import Page
@@ -509,7 +509,7 @@ class SearchResults(object):
 
             # Get the index of the first match completely within the
             # context.
-            for j in xrange(0, len(matches)):
+            for j in range(0, len(matches)):
                 if matches[j].start >= start:
                     break
 
@@ -568,7 +568,7 @@ class SearchResults(object):
         header = page.page.getPageHeader()
         start = len(header)
         # Find first match after start
-        for i in xrange(len(matches)):
+        for i in range(len(matches)):
             if matches[i].start >= start and \
                     isinstance(matches[i], TextMatch):
                 return i, start
@@ -711,11 +711,11 @@ class SearchResults(object):
             textlinks.append('')
 
         # list of pages to be shown
-        page_range = range(*(
+        page_range = list(range(*(
             cur_page - 5 < 0 and
                 (0, pages > 10 and 10 or pages) or
                 (cur_page - 5, cur_page + 6 > pages and
-                    pages or cur_page + 6)))
+                    pages or cur_page + 6))))
         textlinks.extend([''.join([
                 i != cur_page and f.url(1, href=page_url(i)) or '',
                 f.text(str(i+1)),
@@ -819,7 +819,7 @@ class SearchResults(object):
         @param request: current request
         @param formatter: the formatter instance to use
         """
-        self.buffer = StringIO.StringIO()
+        self.buffer = io.StringIO()
         self.formatter = formatter
         self.request = request
         # Use 1 match, 2 matches...

@@ -7,7 +7,7 @@
 """
 
 import re
-from StringIO import StringIO
+from io import BytesIO
 
 from werkzeug.wrappers import Request as RequestBase
 from werkzeug.wrappers import BaseResponse, ETagResponseMixin, \
@@ -94,7 +94,9 @@ class TestRequest(Request):
             form_data = url_encode(form_data)
             content_type = 'application/x-www-form-urlencoded'
             content_length = len(form_data)
-            input_stream = StringIO(form_data)
+            if isinstance(form_data, str):
+                form_data = form_data.encode('utf-8')
+            input_stream = BytesIO(form_data)
         environ = create_environ(path=path, query_string=query_string,
                                  method=method, input_stream=input_stream,
                                  content_type=content_type,

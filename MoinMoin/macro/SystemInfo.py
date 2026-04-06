@@ -12,7 +12,7 @@
 Dependencies = ['pages']
 
 import sys, os
-from StringIO import StringIO
+from io import StringIO
 
 from MoinMoin import wikiutil, version
 from MoinMoin import action, macro, parser

@@ -26,7 +26,7 @@
 """
 
 import os, gettext, glob
-from StringIO import StringIO
+from io import StringIO, BytesIO
 
 from MoinMoin import log
 logging = log.getLogger(__name__)
@@ -81,15 +81,16 @@ def i18n_init(request):
             for lang_file in glob.glob(po_filename(request, language='*', domain='MoinMoin')): # XXX only MoinMoin domain for now
                 language, domain, ext = os.path.basename(lang_file).split('.')
                 t = Translation(language, domain)
-                f = file(lang_file)
+                f = open(lang_file, encoding='utf-8')
                 t.load_po(f)
                 f.close()
                 logging.debug("loading translation %r" % language)
-                encoding = 'utf-8'
                 _languages[language] = {}
-                for key, value in t.info.items():
+                for key, value in list(t.info.items()):
                     #logging.debug("meta key %s value %r" % (key, value))
-                    _languages[language][key] = value.decode(encoding)
+                    if isinstance(value, bytes):
+                        value = value.decode('utf-8')
+                    _languages[language][key] = value
                 for pagename in strings.all_pages:
                     try:
                         pagename_translated = t.translation._catalog[pagename]
@@ -130,13 +131,13 @@ def bot_translations(request):
     for lang_file in glob.glob(po_filename(request, i18n_dir=po_dir, language='*', domain='JabberBot')):
         language, domain, ext = os.path.basename(lang_file).split('.')
         t = Translation(language, domain)
-        f = file(lang_file)
+        f = open(lang_file, encoding='utf-8')
         t.load_po(f)
         f.close()
         t.loadLanguage(request, trans_dir=po_dir)
         translations[language] = {}
 
-        for key, text in t.raw.items():
+        for key, text in list(t.raw.items()):
             translations[language][key] = text
 
     return translations
@@ -159,7 +160,7 @@ class Translation(object):
         mf = MsgFmt()
         mf.read_po(f.readlines())
         mo_data = mf.generate_mo()
-        f = StringIO(mo_data)
+        f = BytesIO(mo_data)
         self.load_mo(f)
         f.close()
 
@@ -173,11 +174,11 @@ class Translation(object):
             self.ename = info['x-language-in-english']
             self.direction = info['x-direction']
             self.maintainer = info['last-translator']
-        except KeyError, err:
+        except KeyError as err:
             logging.warning("metadata problem in %r: %s" % (self.language, str(err)))
         try:
             assert self.direction in ('ltr', 'rtl', )
-        except (AttributeError, AssertionError), err:
+        except (AttributeError, AssertionError) as err:
             logging.warning("direction problem in %r: %s" % (self.language, str(err)))
 
     def formatMarkup(self, request, text, percent):
@@ -236,7 +237,7 @@ class Translation(object):
 
         if needsupdate:
             logging.debug("langfilename %s needs update" % langfilename)
-            f = file(langfilename)
+            f = open(langfilename, encoding='utf-8')
             self.load_po(f)
             f.close()
             trans = self.translation

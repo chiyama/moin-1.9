@@ -13,14 +13,14 @@
 # individuals. For exact contribution history, see the revision
 # history and logs, available at http://projects.edgewall.com/trac/.
 
-import htmlentitydefs
-from HTMLParser import HTMLParser, HTMLParseError
+import html.entities
+from html.parser import HTMLParser
+
+# HTMLParseError was removed in Python 3.5
+class HTMLParseError(Exception):
+    pass
 import re
-try:
-    frozenset
-except NameError:
-    from sets import ImmutableSet as frozenset
-from StringIO import StringIO
+from io import StringIO
 
 __all__ = ['escape', 'unescape', 'html']
 
@@ -30,42 +30,42 @@ _BOOLEAN_ATTRS = frozenset(['selected', 'checked', 'compact', 'declare',
                             'noresize', 'noshade', 'nowrap'])
 
 
-class Markup(unicode):
+class Markup(str):
     """Marks a string as being safe for inclusion in XML output without needing
     to be escaped.
-    
+
     Strings are normally automatically escaped when added to the HDF.
     `Markup`-strings are however an exception. Use with care.
-    
+
     (since Trac 0.9.3)
     """
     def __new__(self, text='', *args):
         if args:
             text %= tuple([escape(arg) for arg in args])
-        return unicode.__new__(self, text)
+        return str.__new__(self, text)
 
     def __add__(self, other):
-        return Markup(unicode(self) + Markup.escape(other))
+        return Markup(str(self) + Markup.escape(other))
 
     def __mod__(self, args):
         if not isinstance(args, (list, tuple)):
             args = [args]
-        return Markup(unicode.__mod__(self,
+        return Markup(str.__mod__(self,
                                       tuple([escape(arg) for arg in args])))
 
     def __mul__(self, num):
-        return Markup(unicode(self) * num)
+        return Markup(str(self) * num)
 
     def join(self, seq):
-        return Markup(unicode(self).join([Markup.escape(item) for item in seq]))
+        return Markup(str(self).join([Markup.escape(item) for item in seq]))
 
     def stripentities(self, keepxmlentities=False):
         """Return a copy of the text with any character or numeric entities
         replaced by the equivalent UTF-8 characters.
-        
+
         If the `keepxmlentities` parameter is provided and evaluates to `True`,
         the core XML entities (&amp;, &apos;, &gt;, &lt; and &quot;).
-        
+
         (Since Trac 0.10)
         """
         def _replace_entity(match):
@@ -75,14 +75,14 @@ class Markup(unicode):
                     ref = int(ref[1:], 16)
                 else:
                     ref = int(ref, 10)
-                return unichr(ref)
+                return chr(ref)
             else: # character entity
                 ref = match.group(2)
                 if keepxmlentities and ref in ('amp', 'apos', 'gt', 'lt', 'quot'):
                     return '&%s;' % ref
                 try:
-                    codepoint = htmlentitydefs.name2codepoint[ref]
-                    return unichr(codepoint)
+                    codepoint = html.entities.name2codepoint[ref]
+                    return chr(codepoint)
                 except KeyError:
                     if keepxmlentities:
                         return '&amp;%s;' % ref
@@ -95,17 +95,18 @@ class Markup(unicode):
         """Return a copy of the text with all XML/HTML tags removed."""
         return Markup(re.sub(r'<[^>]*?>', '', self))
 
+    @classmethod
     def escape(cls, text, quotes=True):
         """Create a Markup instance from a string and escape special characters
         it may contain (<, >, & and \").
-        
+
         If the `quotes` parameter is set to `False`, the \" character is left
         as is. Escaping quotes is generally only required for strings that are
         to be used in attribute values.
         """
         if isinstance(text, (cls, Element)):
             return text
-        text = unicode(text)
+        text = str(text)
         if not text:
             return cls()
         text = text.replace('&', '&amp;') \
@@ -114,30 +115,29 @@ class Markup(unicode):
         if quotes:
             text = text.replace('"', '&#34;')
         return cls(text)
-    escape = classmethod(escape)
 
     def unescape(self):
-        """Reverse-escapes &, <, > and \" and returns a `unicode` object."""
+        """Reverse-escapes &, <, > and \" and returns a `str` object."""
         if not self:
             return ''
-        return unicode(self).replace('&#34;', '"') \
+        return str(self).replace('&#34;', '"') \
                             .replace('&gt;', '>') \
                             .replace('&lt;', '<') \
                             .replace('&amp;', '&')
 
     def plaintext(self, keeplinebreaks=True):
-        """Returns the text as a `unicode`with all entities and tags removed."""
-        text = unicode(self.striptags().stripentities())
+        """Returns the text as a `str` with all entities and tags removed."""
+        text = str(self.striptags().stripentities())
         if not keeplinebreaks:
             text = text.replace('\n', ' ')
         return text
 
     def sanitize(self):
         """Parse the text as HTML and return a cleaned up XHTML representation.
-        
+
         This will remove any javascript code or other potentially dangerous
         elements.
-        
+
         If the HTML cannot be parsed, an `HTMLParseError` will be raised by the
         underlying `HTMLParser` module, which should be handled by the caller of
         this function.
@@ -151,7 +151,7 @@ class Markup(unicode):
 escape = Markup.escape
 
 def unescape(text):
-    """Reverse-escapes &, <, > and \" and returns a `unicode` object."""
+    """Reverse-escapes &, <, > and \" and returns a `str` object."""
     if not isinstance(text, Markup):
         return text
     return text.unescape()
@@ -165,7 +165,7 @@ class Deuglifier(object):
             cls._compiled_rules = re.compile('(?:' + '|'.join(cls.rules()) + ')')
         self._compiled_rules = cls._compiled_rules
         return self
-    
+
     def format(self, indata):
         return re.sub(self._compiled_rules, self.replace, indata)
 
@@ -205,7 +205,7 @@ class HTMLSanitizer(HTMLParser):
         'target', 'title', 'type', 'usemap', 'valign', 'value',
         'vspace', 'width'])
     ignore_tags = frozenset(['html', 'body'])
-    
+
     uri_attrs = frozenset(['action', 'background', 'dynsrc', 'href',
                            'lowsrc', 'src'])
     safe_schemes = frozenset(['file', 'ftp', 'http', 'https', 'mailto',
@@ -221,7 +221,7 @@ class HTMLSanitizer(HTMLParser):
             return
         if tag in self.ignore_tags:
             return
-        
+
         if tag not in self.safe_tags:
             self.waiting_for = tag
             return
@@ -292,7 +292,7 @@ class Fragment(object):
 
     def append(self, node):
         """Append an element or string as child node."""
-        if isinstance(node, (Element, Markup, basestring, int, float, long)):
+        if isinstance(node, (Element, Markup, str, int, float)):
             # For objects of a known/primitive type, we avoid the check for
             # whether it is iterable for better performance
             self.children.append(node)
@@ -314,12 +314,9 @@ class Fragment(object):
         """Generator that yield tags and text nodes as strings."""
         for child in self.children:
             if isinstance(child, Fragment):
-                yield unicode(child)
+                yield str(child)
             else:
                 yield escape(child, quotes=False)
-
-    def __unicode__(self):
-        return u''.join(self.serialize())
 
     def __str__(self):
         return ''.join(self.serialize())
@@ -330,99 +327,99 @@ class Fragment(object):
 
 class Element(Fragment):
     """Simple XHTML output generator based on the builder pattern.
-    
+
     Construct XHTML elements by passing the tag name to the constructor:
-    
-    >>> print Element('strong')
+
+    >>> print(Element('strong'))
     <strong></strong>
-    
+
     Attributes can be specified using keyword arguments. The values of the
     arguments will be converted to strings and any special XML characters
     escaped:
-    
-    >>> print Element('textarea', rows=10, cols=60)
+
+    >>> print(Element('textarea', rows=10, cols=60))
     <textarea rows="10" cols="60"></textarea>
-    >>> print Element('span', title='1 < 2')
+    >>> print(Element('span', title='1 < 2'))
     <span title="1 &lt; 2"></span>
-    >>> print Element('span', title='"baz"')
+    >>> print(Element('span', title='"baz"'))
     <span title="&#34;baz&#34;"></span>
-    
+
     The " character is escaped using a numerical entity.
     The order in which attributes are rendered is undefined.
-    
+
     If an attribute value evaluates to `None`, that attribute is not included
     in the output:
-    
-    >>> print Element('a', name=None)
+
+    >>> print(Element('a', name=None))
     <a></a>
-    
+
     Attribute names that conflict with Python keywords can be specified by
     appending an underscore:
-    
-    >>> print Element('div', class_='warning')
+
+    >>> print(Element('div', class_='warning'))
     <div class="warning"></div>
-    
+
     While the tag names and attributes are not restricted to the XHTML language,
     some HTML characteristics such as boolean (minimized) attributes and empty
     elements get special treatment.
-    
+
     For compatibility with HTML user agents, some XHTML elements need to be
     closed using a separate closing tag even if they are empty. For this, the
     close tag is only ommitted for a small set of elements which are known be
     be safe for use as empty elements:
-    
-    >>> print Element('br')
+
+    >>> print(Element('br'))
     <br />
-    
+
     Trying to add nested elements to such an element will cause an
     `AssertionError`:
-    
+
     >>> Element('br')('Oops')
     Traceback (most recent call last):
         ...
     AssertionError: 'br' elements must not have content
-    
+
     Furthermore, boolean attributes such as "selected" or "checked" are omitted
     if the value evaluates to `False`. Otherwise, the name of the attribute is
     used for the value:
-    
-    >>> print Element('option', value=0, selected=False)
+
+    >>> print(Element('option', value=0, selected=False))
     <option value="0"></option>
-    >>> print Element('option', selected='yeah')
+    >>> print(Element('option', selected='yeah'))
     <option selected="selected"></option>
-    
-    
+
+
     Nested elements can be added to an element by calling the instance using
     positional arguments. The same technique can also be used for adding
     attributes using keyword arguments, as one would do in the constructor:
-    
-    >>> print Element('ul')(Element('li'), Element('li'))
+
+    >>> print(Element('ul')(Element('li'), Element('li')))
     <ul><li></li><li></li></ul>
-    >>> print Element('a')('Label')
+    >>> print(Element('a')('Label'))
     <a>Label</a>
-    >>> print Element('a')('Label', href="target")
+    >>> print(Element('a')('Label', href="target"))
     <a href="target">Label</a>
 
     Text nodes can be nested in an element by adding strings instead of
     elements. Any special characters in the strings are escaped automatically:
 
-    >>> print Element('em')('Hello world')
+    >>> print(Element('em')('Hello world'))
     <em>Hello world</em>
-    >>> print Element('em')(42)
+    >>> print(Element('em')(42))
     <em>42</em>
-    >>> print Element('em')('1 < 2')
+    >>> print(Element('em')('1 < 2'))
     <em>1 &lt; 2</em>
 
     This technique also allows mixed content:
 
-    >>> print Element('p')('Hello ', Element('b')('world'))
+    >>> print(Element('p')('Hello ', Element('b')('world')))
     <p>Hello <b>world</b></p>
 
     Elements can also be combined with other elements or strings using the
     addition operator, which results in a `Fragment` object that contains the
     operands:
-    
-    >>> print Element('br') + 'some text' + Element('br')
+
+    >>> print(Element('br') + 'some text' + Element('br'))
     <br />some text<br />
     """
     __slots__ = ['tagname', 'attr']

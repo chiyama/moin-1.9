@@ -9,9 +9,8 @@
 
 import os, sys, glob
 
-import distutils
-from distutils.core import setup
-from distutils.command.build_scripts import build_scripts
+from setuptools import setup
+from setuptools.command.build_scripts import build_scripts
 
 from MoinMoin.version import release, revision
 
@@ -61,31 +60,16 @@ def makeDataFiles(prefix, dir):
     dir = dir.rstrip('/')
     strip = len(dir) + 1
     found = []
-    os.path.walk(dir, visit, (prefix, strip, found))
+    for dirpath, dirnames, filenames in os.walk(dir):
+        # Remove directories we don't want to visit
+        dirnames[:] = [d for d in dirnames if isgood(d)]
+        files = []
+        for name in filenames:
+            if isgood(name):
+                files.append(os.path.join(dirpath, name))
+        destination = os.path.join(prefix, dirpath[strip:])
+        found.append((destination, files))
     return found
-
-def visit((prefix, strip, found), dirname, names):
-    """ Visit directory, create distutil tuple
-
-    Add distutil tuple for each directory using this format:
-        (destination, [dirname/file1, dirname/file2, ...])
-
-    distutil will copy later file1, file2, ... info destination.
-    """
-    files = []
-    # Iterate over a copy of names, modify names
-    for name in names[:]:
-        path = os.path.join(dirname, name)
-        # Ignore directories -  we will visit later
-        if os.path.isdir(path):
-            # Remove directories we don't want to visit later
-            if isbad(name):
-                names.remove(name)
-            continue
-        elif isgood(name):
-            files.append(path)
-    destination = os.path.join(prefix, dirname[strip:])
-    found.append((destination, files))
 
 def make_filelist(dir, strip_prefix=''):
     """ package_data is pretty stupid: if the globs that can be given there
@@ -95,17 +79,13 @@ def make_filelist(dir, strip_prefix=''):
         stripping off the strip_prefix at the left side.
     """
     found = []
-    def _visit((found, strip), dirname, names):
-        files = []
-        for name in names:
-            path = os.path.join(dirname, name)
+    for dirpath, dirnames, filenames in os.walk(dir):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
             if os.path.isfile(path):
-                if path.startswith(strip):
-                    path = path[len(strip):]
-                files.append(path)
-        found.extend(files)
-
-    os.path.walk(dir, _visit, (found, strip_prefix))
+                if path.startswith(strip_prefix):
+                    path = path[len(strip_prefix):]
+                found.append(path)
     return found
 
 #############################################################################
@@ -177,7 +157,7 @@ class build_scripts_create(build_scripts):
                         % script_vars)
             finally:
                 file.close()
-                os.chmod(outfile, 0755)
+                os.chmod(outfile, 0o755)
 
 
 class build_scripts_moin(build_scripts_create):
@@ -236,16 +216,17 @@ Operating System :: Unix
 Operating System :: MacOS :: MacOS X
 Operating System :: Microsoft :: Windows
 Programming Language :: Python
-Programming Language :: Python :: 2
-Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3
+Programming Language :: Python :: 3.10
 Topic :: Internet :: WWW/HTTP :: Dynamic Content
 Topic :: Internet :: WWW/HTTP :: WSGI
 Topic :: Internet :: WWW/HTTP :: WSGI :: Application
 Topic :: Office/Business :: Groupware
 Topic :: Text Processing :: Markup""".splitlines(),
 
+    'python_requires': '>=3.10',
+
     'packages': [
-        'jabberbot',
         'MoinMoin',
         'MoinMoin.action',
         'MoinMoin.auth',
@@ -282,9 +263,6 @@ Topic :: Text Processing :: Markup""".splitlines(),
         'MoinMoin.security',
         'MoinMoin.stats',
         'MoinMoin.support',
-        'MoinMoin.support.flup',
-        'MoinMoin.support.flup.client',
-        'MoinMoin.support.flup.server',
         'MoinMoin.support.passlib',
         'MoinMoin.support.passlib._setup',
         'MoinMoin.support.passlib.ext',
@@ -302,7 +280,6 @@ Topic :: Text Processing :: Markup""".splitlines(),
         'MoinMoin.support.werkzeug.debug',
         'MoinMoin.support.werkzeug.middleware',
         'MoinMoin.support.werkzeug.wrappers',
-        'MoinMoin.support.xappy',
         'MoinMoin.support.parsedatetime',
         'MoinMoin.support.parsedatetime.pdt_locales',
         'MoinMoin.theme',
@@ -344,27 +321,20 @@ Topic :: Text Processing :: Markup""".splitlines(),
     'data_files': makeDataFiles('share/moin', 'wiki')
 }
 
-if hasattr(distutils.dist.DistributionMetadata, 'get_keywords'):
-    setup_args['keywords'] = "wiki web"
-
-if hasattr(distutils.dist.DistributionMetadata, 'get_platforms'):
-    setup_args['platforms'] = "any"
-
-
 if __name__ == '__main__':
     try:
         setup(**setup_args)
-    except distutils.errors.DistutilsPlatformError, ex:
-        print
-        print str(ex)
+    except Exception as ex:
+        print()
+        print(str(ex))
 
-        print """
+        print("""
 POSSIBLE CAUSE
 
-"distutils" often needs developer support installed to work
+"setuptools" often needs developer support installed to work
 correctly, which is usually located in a separate package
 called "python%d.%d-dev(el)".
 
 Please contact the system administrator to have it installed.
-""" % sys.version_info[:2]
+""" % sys.version_info[:2])
         sys.exit(1)

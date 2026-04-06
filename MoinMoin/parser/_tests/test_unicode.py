@@ -63,7 +63,7 @@ class TestParserOutput(object):
                 r = request.redirectedOutput(p.format, request.formatter)
 
                 # This assertion will only be triggered, if the parser does not write unicode at all
-                assert isinstance(r, unicode), u'MoinMoin.parser.%s does not write UNICODE data but %s' % (parsername, type(r), )
+                assert isinstance(r, str), u'MoinMoin.parser.%s does not write UNICODE data but %s' % (parsername, type(r), )
 
 coverage_modules = ['MoinMoin.parser']
 

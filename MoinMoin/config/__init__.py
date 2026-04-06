@@ -20,7 +20,7 @@ parser_text_mimetype = ('plain', 'csv', 'rst', 'docbook', 'latex', 'tex', 'html'
                        'cplusplus', 'java', 'pascal', 'diff', 'gettext', 'xslt', 'creole', )
 
 # When creating files, we use e.g. 0666 & config.umask for the mode:
-umask = 0770
+umask = 0o770
 
 # list of acceptable password hashing schemes for cfg.password_scheme,
 # here we only give reasonably good schemes, which is passlib (if we
@@ -55,7 +55,7 @@ split_regex = re.compile('([%s])([%s])' % (chars_lower, chars_upper), re.UNICODE
 # Invalid characters - invisible characters that should not be in page
 # names. Prevent user confusion and wiki abuse, e.g u'\u202aFrontPage'.
 page_invalid_chars_regex = re.compile(
-    ur"""
+    r"""
     \u0000 | # NULL
 
     # Bidi control characters

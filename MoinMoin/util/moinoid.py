@@ -52,7 +52,7 @@ class MoinOpenIDStore(OpenIDStore):
 
     def key(self, url):
         '''return cache key'''
-        return hashlib.new('sha1', url).hexdigest()
+        return hashlib.new('sha1', url.encode('utf-8')).hexdigest()
 
     def storeAssociation(self, server_url, association):
         ce = caching.CacheEntry(self.request, 'openid', self.key(server_url),
@@ -71,7 +71,7 @@ class MoinOpenIDStore(OpenIDStore):
             return None
         assocs = ce.content()
         found = False
-        for idx in xrange(len(assocs)-1, -1, -1):
+        for idx in range(len(assocs)-1, -1, -1):
             assoc_str = assocs[idx]
             association = Association.deserialize(assoc_str)
             if association.getExpiresIn() == 0:
@@ -91,7 +91,7 @@ class MoinOpenIDStore(OpenIDStore):
         if not ce.exists():
             return
         assocs = ce.content()
-        for idx in xrange(len(assocs)-1, -1, -1):
+        for idx in range(len(assocs)-1, -1, -1):
             assoc_str = assocs[idx]
             association = Association.deserialize(assoc_str)
             if association.handle == handle:
@@ -103,7 +103,7 @@ class MoinOpenIDStore(OpenIDStore):
 
     def useNonce(self, server_url, timestamp, salt):
         val = ''.join([str(server_url), str(timestamp), str(salt)])
-        csum = hashlib.new('sha1', val).hexdigest()
+        csum = hashlib.new('sha1', val.encode('utf-8')).hexdigest()
         ce = caching.CacheEntry(self.request, 'openid-nonce', csum,
                                 scope='farm', use_pickle=False)
         if ce.exists():

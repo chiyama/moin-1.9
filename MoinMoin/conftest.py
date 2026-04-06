@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 """
 MoinMoin Testing Framework
 --------------------------
@@ -22,11 +22,12 @@ use a Config class to define the required configuration within the test class.
 
 import atexit
 import sys
+from pathlib import Path
 
-import py
+import pytest
 
-rootdir = py.magic.autopath().dirpath()
-moindir = rootdir.join("..")
+rootdir = Path(__file__).parent
+moindir = rootdir.parent
 sys.path.insert(0, str(moindir))
 
 from MoinMoin.web.request import TestRequest, Client
@@ -51,14 +52,15 @@ try:
         module_list.sort()
         coverage.report(module_list)
 
-    def callback(option, opt_str, value, parser):
-        atexit.register(report_coverage)
-        coverage.erase()
-        coverage.start()
+    def pytest_addoption(parser):
+        parser.addoption('--coverage', action='store_true', default=False,
+                         help='Output information about code coverage (slow!)')
 
-    py.test.config.addoptions('MoinMoin options', py.test.config.Option('-C',
-        '--coverage', action='callback', callback=callback,
-        help='Output information about code coverage (slow!)'))
+    def pytest_configure(config):
+        if config.getoption('--coverage'):
+            atexit.register(report_coverage)
+            coverage.erase()
+            coverage.start()
 
 except ImportError:
     coverage = None
@@ -74,50 +76,23 @@ def init_test_request(given_config=None, static_state=[False]):
     return request
 
 
-# py.test customization starts here
-
-# py.test-1.0 provides "funcargs" natively
-def pytest_funcarg__request(request):
-    # note the naminng clash: py.test's funcarg-request object
-    # and the request we provide are totally separate things
-    cls = request._pyfuncitem.getparent(py.test.collect.Module)
-    return cls.request
-
-class MoinTestFunction(py.test.collect.Function):
-    def execute(self, target, *args):
-        request = self.parent.request
-        co = target.func_code
-        if 'request' in co.co_varnames[:co.co_argcount]:
-            target(request, *args)
-        else:
-            target(*args)
+def pytest_collection_modifyitems(session, config, items):
+    """Collect coverage_modules from test modules."""
+    if coverage is not None:
+        for item in items:
+            mod = item.module if hasattr(item, 'module') else None
+            if mod is not None:
+                coverage_modules.update(getattr(mod, 'coverage_modules', []))
 
 
-class MoinClassCollector(py.test.collect.Class):
-    Function = MoinTestFunction
-
-    def setup(self):
-        cls = self.obj
+def pytest_runtest_setup(item):
+    """Inject request and client into test classes, mimicking old behavior."""
+    cls = item.cls
+    if cls is not None and not hasattr(cls, '_moin_setup_done'):
         if hasattr(cls, 'Config'):
             cls.request = init_test_request(given_config=cls.Config)
             cls.client = Client(Application(cls.Config))
         else:
-            cls.request = self.parent.request
-            #XXX: this is the extremely messy way to configure the wsgi app
-            #     with the correct testing config
-            cls.client = Client(Application(self.parent.request.cfg.__class__))
-        super(MoinClassCollector, self).setup()
-
-
-class Module(py.test.collect.Module):
-    Class = MoinClassCollector
-    Function = MoinTestFunction
-
-    def __init__(self, *args, **kwargs):
-        self.request = init_test_request(given_config=wikiconfig.Config)
-        super(Module, self).__init__(*args, **kwargs)
-
-    def run(self, *args, **kwargs):
-        if coverage is not None:
-            coverage_modules.update(getattr(self.obj, 'coverage_modules', []))
-        return super(Module, self).run(*args, **kwargs)
+            cls.request = init_test_request(given_config=wikiconfig.Config)
+            cls.client = Client(Application(wikiconfig.Config))
+        cls._moin_setup_done = True

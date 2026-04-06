@@ -319,7 +319,7 @@ def execute(macro, text):
                  '  </th>\n' % (showpagename, prevyear, prevmonth, str(year), month, nextmonth, nextyear)
     restr1 = ' <tr>\n%s </tr>\n' % resth1
 
-    r7 = range(7)
+    r7 = list(range(7))
     restd2 = []
     for wkday in r7:
         wday = _(wkdays[wkday])

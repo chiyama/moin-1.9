@@ -5,7 +5,7 @@
     @copyright: 2008 MoinMoin:ThomasWaldmann
     @license: GNU GPL, see COPYING for details.
 """
-import py.test
+import pytest
 
 from MoinMoin.web.request import TestRequest, evaluate_request
 from MoinMoin import wsgiapp
@@ -122,7 +122,7 @@ class TestAnonSession(AuthTest):
 
             assert not request.session.is_new
 
-            trail_expected.append(unicode(pagename))
+            trail_expected.append(str(pagename))
 
             # Requested pagenames get into trail?
             assert 'trail' in request.session
@@ -130,7 +130,7 @@ class TestAnonSession(AuthTest):
             assert trail == trail_expected
 
 class TestHttpAuthSession(AuthTest):
-    py.test.skip("We currently have no http auth code in moin. GivenAuth relies on the web server doing the http auth check.")
+    pytest.skip("We currently have no http auth code in moin. GivenAuth relies on the web server doing the http auth check.")
     class Config(wikiconfig.Config):
         from MoinMoin.auth.http import HttpAuth # does not exist (yet?)
         auth = [HttpAuth(autocreate=True)]
@@ -188,7 +188,7 @@ class TestHttpAuthSession(AuthTest):
                 first = False
                 continue
 
-            trail_expected.append(unicode(pagename))
+            trail_expected.append(str(pagename))
 
             # Requested pagenames get into trail?
             assert 'trail' in request.session
@@ -262,7 +262,7 @@ class TestMoinAuthSession(AuthTest):
                 first = False
                 continue
 
-            trail_expected.append(unicode(pagename))
+            trail_expected.append(str(pagename))
 
             # Requested pagenames get into trail?
             assert 'trail' in request.session
