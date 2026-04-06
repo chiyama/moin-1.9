@@ -22,9 +22,10 @@ python -m pytest MoinMoin/_tests/test_error.py -v
 python -m pytest MoinMoin/_tests/ --ignore=MoinMoin/_tests/test_wikiutil.py --ignore=MoinMoin/_tests/test_wsgiapp.py -v
 ```
 
-## Architecture
+## Architecture & Work Plan
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full module-by-module guide.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — module structure, maturity levels, request lifecycle
+- [docs/MODERNIZE.md](docs/MODERNIZE.md) — session-by-session modernization plan with verification steps
 
 ## Key Conventions
 
