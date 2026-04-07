@@ -2499,7 +2499,7 @@ def createTicket(request, tm=None, action=None, pagename=None):
     """
     if tm is None:
         # for age-check of ticket
-        tm = "%010x" % time.time()
+        tm = "%010x" % int(time.time())
 
     # make the ticket very specific:
     if pagename is None:
@@ -2529,8 +2529,11 @@ def createTicket(request, tm=None, action=None, pagename=None):
             value = value.encode('utf-8')
         hmac_data.append(value)
 
-    h = hmac.new(request.cfg.secrets['wikiutil/tickets'],
-                 ''.join(hmac_data), digestmod=hashlib.sha1)
+    key = request.cfg.secrets['wikiutil/tickets']
+    if isinstance(key, str):
+        key = key.encode('utf-8')
+    h = hmac.new(key,
+                 b''.join(hmac_data), digestmod=hashlib.sha1)
     return "%s.%s" % (tm, h.hexdigest())
 
 

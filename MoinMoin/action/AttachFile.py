@@ -160,8 +160,8 @@ def getFilename(request, pagename, filename):
         @rtype: string (in config.charset encoding)
         @return: complete path/filename of attached file
     """
-    if isinstance(filename, str):
-        filename = filename.encode(config.charset)
+    if isinstance(filename, bytes):
+        filename = filename.decode(config.charset)
     return os.path.join(getAttachDir(request, pagename, create=1), filename)
 
 
@@ -598,7 +598,7 @@ def _do_multifile(pagename, request):
 def _get_files(request, pagename):
     attach_dir = getAttachDir(request, pagename)
     if os.path.isdir(attach_dir):
-        files = [fn.decode(config.charset) for fn in os.listdir(attach_dir)]
+        files = list(os.listdir(attach_dir))
         files.sort()
     else:
         files = []

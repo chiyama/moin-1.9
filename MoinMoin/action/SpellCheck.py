@@ -165,7 +165,7 @@ def checkSpelling(page, request, own_form=1):
 
     if badwords:
         badwords = list(badwords.keys())
-        badwords.sort(lambda x, y: cmp(x.lower(), y.lower()))
+        badwords.sort(key=str.lower)
 
         # build regex recognizing the bad words
         badwords_re = r'(^|(?<!\w))(%s)(?!\w)'

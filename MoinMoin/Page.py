@@ -1887,7 +1887,7 @@ class RootPage(Page):
             for name in cachedlist:
                 # First, custom filter - exists and acl check are very
                 # expensive!
-                if filter and not list(filter(name)):
+                if filter and not filter(name):
                     continue
 
                 page = Page(request, name)

@@ -370,16 +370,24 @@ class FormatterBase:
             when output goes to XML formats.
         """
 
-        import formatter, htmllib
-        from MoinMoin.util import simpleIO
+        from html.parser import HTMLParser
+        import io
 
-        # Regenerate plain text
-        f = simpleIO()
-        h = htmllib.HTMLParser(formatter.AbstractFormatter(formatter.DumbWriter(f)))
+        # Regenerate plain text by stripping HTML tags
+        class _HTMLToText(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._result = io.StringIO()
+            def handle_data(self, data):
+                self._result.write(data)
+            def get_text(self):
+                return self._result.getvalue()
+
+        h = _HTMLToText()
         h.feed(markup)
         h.close()
 
-        return self.text(f.getvalue())
+        return self.text(h.get_text())
 
     def escapedText(self, on, **kw):
         """ This allows emitting text as-is, anything special will
