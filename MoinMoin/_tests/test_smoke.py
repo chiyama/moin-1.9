@@ -35,6 +35,9 @@
     8. wikiutil.createTicket     — time.time() returns float; %x needs int
     9. wikiutil.createTicket     — hmac.new needs bytes key and msg
     10. Page.getPageList          — list(filter(name)) → filter(name)
+    11. _creole.py                 — unichr → chr (Py3)
+    12. editlog.EditLogLine        — __cmp__ → __lt__/__eq__ (Py3)
+    13. text_csv.py                — remove encode/decode for Py3 csv.reader
 
     @copyright: 2026 MoinMoin:py3-migration
     @license: GNU GPL, see COPYING for details.
@@ -110,6 +113,19 @@ class TestSmoke(_WikiClient):
         """Plain-text formatter: formatter.rawHTML (replaced formatter/htmllib)."""
         status, body = self._get('/LanguageSetup?action=format&mimetype=text/plain')
         assert status[:3] == '200'
+
+    def test_creole_syntax_page(self):
+        """Creole parser: _creole.py unichr → chr."""
+        status, body = self._get('/HelpOnCreoleSyntax')
+        assert status[:3] == '200'
+
+    def test_abandoned_pages(self):
+        """AbandonedPages macro: EditLogLine sort (requires __lt__)."""
+        self._assert_no_500('/AbandonedPages')
+
+    def test_page_with_csv_parser(self):
+        """CSV parser: text_csv.py encode/decode removed for Py3."""
+        self._assert_no_500('/HelpOnParsers')
 
 
 # ---------------------------------------------------------------------------

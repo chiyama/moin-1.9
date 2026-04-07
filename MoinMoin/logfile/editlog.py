@@ -39,11 +39,26 @@ class EditLogLine:
     def __init__(self, usercache):
         self._usercache = usercache
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         try:
-            return cmp(self.ed_time_usecs, other.ed_time_usecs)
+            return self.ed_time_usecs < other.ed_time_usecs
         except AttributeError:
-            return cmp(self.ed_time_usecs, other)
+            return self.ed_time_usecs < other
+
+    def __eq__(self, other):
+        try:
+            return self.ed_time_usecs == other.ed_time_usecs
+        except AttributeError:
+            return self.ed_time_usecs == other
+
+    def __le__(self, other):
+        return self == other or self < other
+
+    def __gt__(self, other):
+        return not self <= other
+
+    def __ge__(self, other):
+        return not self < other
 
     def is_from_current_user(self, request):
         user = request.user

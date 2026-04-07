@@ -117,15 +117,33 @@
 - **ファイル**: `MoinMoin/parser/_creole.py:147-148`
 - **エラー**: `NameError: name 'unichr' is not defined`
 - **原因**: Python 3 では `unichr` → `chr`
-- **状態**: 未修正
+- **状態**: 修正済み — `unichr` → `chr`
 
 ### Error 9: RecentChanges — EditLogLine の比較 (影響: 低)
 
 - **症状**: AbandonedPages 表示で 500
-- **ファイル**: `MoinMoin/macro/RecentChanges.py:172`
+- **ファイル**: `MoinMoin/logfile/editlog.py:42-46`
 - **エラー**: `TypeError: '<' not supported between instances of 'EditLogLine' and 'EditLogLine'`
-- **原因**: Python 3 では `__lt__` 等の比較メソッドが必要
-- **状態**: 未修正
+- **原因**: Python 3 では `__cmp__` が廃止、`__lt__` 等の比較メソッドが必要
+- **状態**: 修正済み — `__cmp__` → `__lt__`/`__eq__`/`__le__`/`__gt__`/`__ge__`
+
+### Error 10: text_csv パーサー — encode/decode 不要 (影響: 中)
+
+- **症状**: CSV テーブルを含むページの表示が 500
+- **影響範囲**: 26ページ (各言語の SyntaxReference, HelpOnParsers 等)
+- **ファイル**: `MoinMoin/parser/text_csv.py:58, 83, 87, 98, 101, 103-104, 127, 133, 158`
+- **エラー**: `TypeError: a bytes-like object is required, not 'str'`
+- **原因**: Python 3 の `csv.reader` は str を受け取り str を返すが、Py2 用に encode/decode していた
+- **状態**: 修正済み — encode/decode を全て削除
+
+### Error 11: htmlmarkup.py — `html` モジュール名衝突 (影響: 極低)
+
+- **症状**: `ПомощьПоДействиям/AttachFile` (ロシア語ヘルプ) の表示で 500
+- **影響範囲**: 1ページのみ (HTML パーサー埋め込みのある特定ページ)
+- **ファイル**: `MoinMoin/support/htmlmarkup.py:84`
+- **エラー**: `AttributeError: 'Element' object has no attribute 'name2codepoint'`
+- **原因**: `html` モジュールが他の import で shadowed されている可能性
+- **状態**: 未修正 — `MoinMoin/support/` は vendored コードのため編集禁止
 
 ---
 
