@@ -52,18 +52,27 @@ try:
         module_list.sort()
         coverage.report(module_list)
 
-    def pytest_addoption(parser):
-        parser.addoption('--coverage', action='store_true', default=False,
-                         help='Output information about code coverage (slow!)')
-
-    def pytest_configure(config):
-        if config.getoption('--coverage'):
-            atexit.register(report_coverage)
-            coverage.erase()
-            coverage.start()
+    _has_coverage = True
 
 except ImportError:
     coverage = None
+    _has_coverage = False
+
+
+def pytest_addoption(parser):
+    if _has_coverage:
+        parser.addoption('--coverage', action='store_true', default=False,
+                         help='Output information about code coverage (slow!)')
+    parser.addoption('--run-slow', action='store_true', default=False,
+                     help='Run tests marked "slow" (full page scan, ~70s)')
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: full-page scan (~70s)")
+    if _has_coverage and config.getoption('--coverage'):
+        atexit.register(report_coverage)
+        coverage.erase()
+        coverage.start()
 
 
 def init_test_request(given_config=None, static_state=[False]):
@@ -77,12 +86,18 @@ def init_test_request(given_config=None, static_state=[False]):
 
 
 def pytest_collection_modifyitems(session, config, items):
-    """Collect coverage_modules from test modules."""
+    """Collect coverage_modules from test modules; skip slow tests by default."""
     if coverage is not None:
         for item in items:
             mod = item.module if hasattr(item, 'module') else None
             if mod is not None:
                 coverage_modules.update(getattr(mod, 'coverage_modules', []))
+
+    if not config.getoption('--run-slow'):
+        skip_slow = pytest.mark.skip(reason="need --run-slow option to run")
+        for item in items:
+            if "slow" in item.keywords:
+                item.add_marker(skip_slow)
 
 
 def pytest_runtest_setup(item):

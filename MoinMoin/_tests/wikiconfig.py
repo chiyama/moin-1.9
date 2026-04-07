@@ -31,6 +31,9 @@ class Config(DefaultConfig):
     # used to check if it is really a wiki we may modify
     is_test_wiki = True
 
+    # disable surge protection so smoke tests don't get rate-limited
+    surge_action_limits = None
+
     # for runnging tests without passlib support:
     #passlib_support = False
     #password_scheme = '{SSHA}'
