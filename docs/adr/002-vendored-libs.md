@@ -1,17 +1,17 @@
-# ADR-002: サードパーティライブラリの vendoring
+# ADR-002: Third-Party Library Vendoring
 
 ## Status
 Accepted (inherited from upstream MoinMoin)
 
 ## Background
-MoinMoin は歴史的にサードパーティライブラリを `MoinMoin/support/` に同梱している。
-これにより、追加の pip install なしで動作する。
+MoinMoin has historically bundled third-party libraries under `MoinMoin/support/`.
+This allows the application to run without additional pip installs.
 
 ## Decision
-vendoring を継続する。`MoinMoin/support/` に配置し、`MoinMoin/__init__.py` で
-`sys.path` に追加する。
+Continue vendoring. Libraries are placed in `MoinMoin/support/` and added to
+`sys.path` in `MoinMoin/__init__.py`.
 
-現在の bundled ライブラリ:
+Currently bundled libraries:
 - werkzeug 1.0.1
 - passlib 1.7.2
 - pygments 2.5.2
@@ -21,13 +21,13 @@ vendoring を継続する。`MoinMoin/support/` に配置し、`MoinMoin/__init_
 - md5crypt.py (custom)
 - BasicAuthTransport.py (custom)
 
-**真実源**: `MoinMoin/support/` ディレクトリ内の実ファイル。
-バージョンは各ライブラリの `__init__.py` や `_version` で確認すること。
+**Truth source**: The actual files inside the `MoinMoin/support/` directory.
+Check each library's `__init__.py` or `_version` for version information.
 
 ## Alternatives Considered
-- pip 依存に切り替え: デプロイの手軽さが失われる
-- 一部のみ vendoring: 管理が複雑になる
+- Switch to pip dependencies: Loses ease of deployment
+- Partial vendoring: Increases management complexity
 
 ## Consequences
-- `import werkzeug` で直接 import する (`from MoinMoin.support import ...` は使わない)
-- ライブラリ更新時は `MoinMoin/support/` 配下を丸ごと差し替える
+- Import libraries directly: `import werkzeug` (do not use `from MoinMoin.support import ...`)
+- When updating a library, replace the entire package under `MoinMoin/support/`

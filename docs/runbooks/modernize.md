@@ -1,269 +1,269 @@
-# MoinMoin 近代化作業ガイド
+# MoinMoin Modernization Work Guide
 
-本ドキュメントは、Python 3 移行後の MoinMoin を「実用レベル」に引き上げるための
-セッション単位の作業計画である。各セッションは独立して実行でき、前のセッションの
-成果に依存する場合は明記している。
+This document is a session-based work plan for bringing MoinMoin to a production-ready
+state after the Python 3 migration. Each session can be executed independently;
+dependencies on prior sessions are noted where applicable.
 
-進捗は各項目の Status を更新して管理する。
+Track progress by updating the Status of each item.
 
-## Status 凡例
+## Status Legend
 
-- `[ ]` 未着手
-- `[~]` 作業中・部分完了
-- `[x]` 完了・検証済み
+- `[ ]` Not started
+- `[~]` In progress / partially complete
+- `[x]` Complete / verified
 
 ---
 
-## Session 1: ページ編集 (PageEditor)
+## Session 1: Page Editing (PageEditor)
 
-**対象モジュール**: `PageEditor.py`, `action/edit.py`, `action/Save.py`, `caching.py`
+**Target modules**: `PageEditor.py`, `action/edit.py`, `action/Save.py`, `caching.py`
 
-**ゴール**: Wiki ページの作成・編集・保存が動作する
+**Goal**: Wiki page creation, editing, and saving work correctly
 
-**背景**: 現在ページの閲覧 (Page.py) は動作するが、編集・保存のパスは未検証。
-str/bytes 境界の問題が高確率で存在する。
+**Background**: Page viewing (Page.py) currently works, but the edit/save path is unverified.
+str/bytes boundary issues are highly likely.
 
-### 作業項目
+### Work Items
 
-- [ ] `action/edit.py` — 編集画面の表示を検証
-- [ ] `PageEditor.py` — `saveText()` のファイル書き込みパスを修正
+- [ ] `action/edit.py` — Verify edit form rendering
+- [ ] `PageEditor.py` — Fix `saveText()` file write path
   - `codecs.open()` → `open(encoding='utf-8')`
-  - ファイルロック周りの動作確認
-- [ ] `caching.py` — キャッシュの読み書きを修正
-  - pickle の read/write が bytes で動作するか確認
-  - `open()` のモード (binary vs text) を監査
-- [ ] `action/Save.py` — 保存アクションの動作確認
+  - Verify file locking behavior
+- [ ] `caching.py` — Fix cache read/write
+  - Confirm pickle read/write operates on bytes
+  - Audit `open()` modes (binary vs text)
+- [ ] `action/Save.py` — Verify save action
 
-### 検証手順
+### Verification
 
 ```bash
-# 1. サーバー起動
+# 1. Start server
 python wikiserver.py
 
-# 2. ブラウザで以下を実行
-# - http://localhost:8080/TestPage?action=edit にアクセス
-# - テキストを入力して保存
-# - 保存したページが表示されることを確認
+# 2. In browser:
+# - Navigate to http://localhost:8080/TestPage?action=edit
+# - Enter text and save
+# - Confirm the saved page renders correctly
 
-# 3. プログラム的な検証
+# 3. Programmatic verification
 python -c "
 from MoinMoin.web.request import Client
 from MoinMoin.wsgiapp import Application
 client = Client(Application())
-# 編集画面の取得
+# Get edit form
 resp = client.get('/TestPage?action=edit')
 print('Edit form:', resp[1])
 "
 ```
 
-### 完了条件
+### Done Criteria
 
-- 新規ページの作成ができる
-- 既存ページの編集・保存ができる
-- 保存後にページが正しく表示される
+- New pages can be created
+- Existing pages can be edited and saved
+- Saved pages render correctly
 
 ---
 
-## Session 2: ユーザー管理 (user, auth)
+## Session 2: User Management (user, auth)
 
-**対象モジュール**: `user.py`, `auth/__init__.py`, `action/login.py`, `action/newaccount.py`, `action/recoverpass.py`
+**Target modules**: `user.py`, `auth/__init__.py`, `action/login.py`, `action/newaccount.py`, `action/recoverpass.py`
 
-**ゴール**: ユーザー登録・ログイン・ログアウトが動作する
+**Goal**: User registration, login, and logout work correctly
 
-**背景**: `user.py` は `codecs.open()` でプロファイルを読み書きし、パスワードは
-passlib (bundled) でハッシュする。`hashlib` のエンコーディング問題は修正済みだが、
-プロファイルの読み書きパスは未検証。
+**Background**: `user.py` reads/writes profiles with `codecs.open()`, and passwords are
+hashed via passlib (bundled). The `hashlib` encoding issue has been fixed, but the
+profile read/write path is unverified.
 
-### 作業項目
+### Work Items
 
-- [ ] `user.py` — ユーザープロファイルの読み書き
+- [ ] `user.py` — User profile read/write
   - `codecs.open()` → `open(encoding='utf-8')`
-  - `save()` と `load()` の str/bytes 確認
-- [ ] `auth/__init__.py` — MoinAuth (内蔵認証) のフロー確認
-- [ ] `action/newaccount.py` — アカウント作成
-- [ ] `action/login.py` — ログインフォーム
-- [ ] `action/recoverpass.py` — パスワードリセット
-- [ ] パスワードハッシュの検証 (passlib 連携)
+  - Verify str/bytes in `save()` and `load()`
+- [ ] `auth/__init__.py` — Verify MoinAuth (built-in auth) flow
+- [ ] `action/newaccount.py` — Account creation
+- [ ] `action/login.py` — Login form
+- [ ] `action/recoverpass.py` — Password reset
+- [ ] Password hash verification (passlib integration)
 
-### 検証手順
+### Verification
 
 ```bash
-# ブラウザで以下を実行
-# 1. http://localhost:8080/?action=newaccount でアカウント作成
-# 2. ログアウト後、再度ログイン
-# 3. ユーザー設定画面にアクセス
+# In browser:
+# 1. Create account at http://localhost:8080/?action=newaccount
+# 2. Log out, then log back in
+# 3. Access user preferences page
 ```
 
-### 完了条件
+### Done Criteria
 
-- 新規ユーザーが作成できる
-- ログイン・ログアウトが動作する
-- ユーザープロファイルが永続化される
+- New users can be created
+- Login and logout work
+- User profiles are persisted
 
 ---
 
-## Session 3: 添付ファイル (AttachFile)
+## Session 3: Attachments (AttachFile)
 
-**対象モジュール**: `action/AttachFile.py`, `action/Load.py`
+**Target modules**: `action/AttachFile.py`, `action/Load.py`
 
-**ゴール**: ファイルのアップロード・ダウンロード・一覧表示が動作する
+**Goal**: File upload, download, and listing work correctly
 
-**背景**: 添付ファイルはバイナリデータなので `open('rb')`/`open('wb')` で正しく
-扱われている可能性が高いが、ファイル名のエンコーディングやフォーム処理に問題がありうる。
+**Background**: Attachments are binary data, so `open('rb')`/`open('wb')` is likely
+already correct. However, filename encoding and form processing may have issues.
 
-### 作業項目
+### Work Items
 
-- [ ] `action/AttachFile.py` — アップロード処理 (`_do_upload`)
-  - multipart フォームデータの処理
-  - ファイル名の str/bytes
-- [ ] `action/AttachFile.py` — ダウンロード処理 (`_do_get`)
-  - Content-Type, Content-Disposition ヘッダ
-- [ ] `action/AttachFile.py` — 一覧表示
-- [ ] `action/Load.py` — ページコンテンツのアップロード
+- [ ] `action/AttachFile.py` — Upload handling (`_do_upload`)
+  - Multipart form data processing
+  - Filename str/bytes
+- [ ] `action/AttachFile.py` — Download handling (`_do_get`)
+  - Content-Type, Content-Disposition headers
+- [ ] `action/AttachFile.py` — File listing
+- [ ] `action/Load.py` — Page content upload
 
-### 検証手順
+### Verification
 
 ```bash
-# 1. テストページを作成 (Session 1 完了が前提)
-# 2. 添付ファイルのアップロード
-# 3. 添付ファイルの一覧表示
-# 4. 添付ファイルのダウンロード
-# 5. 日本語ファイル名でのテスト
+# 1. Create a test page (requires Session 1)
+# 2. Upload an attachment
+# 3. Verify attachment listing
+# 4. Download the attachment
+# 5. Test with non-ASCII filenames
 ```
 
-### 完了条件
+### Done Criteria
 
-- テキストファイルとバイナリファイルの両方がアップロードできる
-- アップロードしたファイルがダウンロードできる
-- 添付ファイル一覧が正しく表示される
+- Both text and binary files can be uploaded
+- Uploaded files can be downloaded
+- Attachment listing renders correctly
 
 ---
 
-## Session 4: ログファイルと履歴 (logfile, diff, info)
+## Session 4: Log Files and History (logfile, diff, info)
 
-**対象モジュール**: `logfile/__init__.py`, `logfile/editlog.py`, `action/diff.py`, `action/info.py`
+**Target modules**: `logfile/__init__.py`, `logfile/editlog.py`, `action/diff.py`, `action/info.py`
 
-**ゴール**: ページの編集履歴表示と差分表示が動作する
+**Goal**: Page edit history and diff views work correctly
 
-**背景**: ログファイルはバイナリモード (`rb`/`ab`) で開かれ、行ごとにデコードする。
-基本的な read パスは修正済みだが、edit log の解析や diff 表示は未検証。
+**Background**: Log files are opened in binary mode (`rb`/`ab`) and decoded line by line.
+The basic read path has been fixed, but edit log parsing and diff display are unverified.
 
-### 作業項目
+### Work Items
 
-- [ ] `logfile/editlog.py` — EditLog エントリの解析
-  - タブ区切り行のパース
-  - タイムスタンプ、ユーザー名、ページ名のデコード
-- [ ] `action/info.py` — ページ情報・履歴画面
-- [ ] `action/diff.py` — リビジョン間の差分表示
-- [ ] `util/diff_html.py` — HTML 差分レンダリング
+- [ ] `logfile/editlog.py` — EditLog entry parsing
+  - Tab-delimited line parsing
+  - Timestamp, username, page name decoding
+- [ ] `action/info.py` — Page info / history view
+- [ ] `action/diff.py` — Revision diff display
+- [ ] `util/diff_html.py` — HTML diff rendering
 
-### 検証手順
+### Verification
 
 ```bash
-# 1. ページを2回以上編集 (Session 1 完了が前提)
-# 2. http://localhost:8080/TestPage?action=info で履歴表示
-# 3. 2つのリビジョン間の diff を表示
+# 1. Edit a page at least twice (requires Session 1)
+# 2. View history at http://localhost:8080/TestPage?action=info
+# 3. Display diff between two revisions
 ```
 
-### 完了条件
+### Done Criteria
 
-- ページの編集履歴が正しく表示される
-- リビジョン間の差分が表示される
+- Page edit history displays correctly
+- Diffs between revisions are shown
 
 ---
 
-## Session 5: 検索 (search)
+## Session 5: Search
 
-**対象モジュール**: `search/__init__.py`, `search/builtin.py`, `search/queryparser/`, `action/fullsearch.py`
+**Target modules**: `search/__init__.py`, `search/builtin.py`, `search/queryparser/`, `action/fullsearch.py`
 
-**ゴール**: ビルトイン検索 (Xapian 不要) が動作する
+**Goal**: Built-in search (no Xapian required) works correctly
 
-### 作業項目
+### Work Items
 
-- [ ] `search/builtin.py` — MoinSearch の動作確認
-- [ ] `search/queryparser/` — クエリパーサーの str 処理
-- [ ] `action/fullsearch.py` — 検索結果ページの表示
+- [ ] `search/builtin.py` — Verify MoinSearch operation
+- [ ] `search/queryparser/` — Query parser str handling
+- [ ] `action/fullsearch.py` — Search results page rendering
 
-### 検証手順
+### Verification
 
 ```bash
-# 1. http://localhost:8080/?action=fullsearch&value=MoinMoin で検索
-# 2. 日本語キーワードでの検索
+# 1. Search at http://localhost:8080/?action=fullsearch&value=MoinMoin
+# 2. Test with non-ASCII keywords
 ```
 
-### 完了条件
+### Done Criteria
 
-- ページタイトル検索が動作する
-- ページ全文検索が動作する
-- 検索結果が正しくリンクされる
+- Page title search works
+- Full-text search works
+- Search results link correctly
 
 ---
 
-## Session 6: セキュリティ (security, ACL)
+## Session 6: Security (ACL)
 
-**対象モジュール**: `security/__init__.py`, `security/textcha.py`, `security/antispam.py`
+**Target modules**: `security/__init__.py`, `security/textcha.py`, `security/antispam.py`
 
-**ゴール**: ACL (アクセス制御リスト) が正しく動作する
+**Goal**: ACL (Access Control Lists) work correctly
 
-### 作業項目
+### Work Items
 
-- [ ] `security/__init__.py` — ACL パース・評価
-- [ ] ACL による読み取り/書き込み制限の検証
-- [ ] `security/textcha.py` — テキスト CAPTCHA
-- [ ] `security/antispam.py` — スパム対策
+- [ ] `security/__init__.py` — ACL parsing and evaluation
+- [ ] Verify read/write restrictions via ACL
+- [ ] `security/textcha.py` — Text CAPTCHA
+- [ ] `security/antispam.py` — Anti-spam measures
 
-### 検証手順
+### Verification
 
 ```bash
-# 1. wikiconfig.py で ACL を設定
-# 2. 匿名ユーザーとログインユーザーで権限の違いを確認
-# 3. テスト: python -m pytest MoinMoin/security/_tests/test_security.py -v
+# 1. Configure ACL in wikiconfig.py
+# 2. Verify permission differences between anonymous and logged-in users
+# 3. Test: python -m pytest MoinMoin/security/_tests/test_security.py -v
 ```
 
-### 完了条件
+### Done Criteria
 
-- ACL 設定に基づいたアクセス制御が機能する
-- テストスイートが通過する
+- Access control based on ACL settings works
+- Test suite passes
 
 ---
 
-## Session 7: メール通知 (mail, events)
+## Session 7: Email Notifications (mail, events)
 
-**対象モジュール**: `mail/sendmail.py`, `events/__init__.py`, `events/emailnotify.py`
+**Target modules**: `mail/sendmail.py`, `events/__init__.py`, `events/emailnotify.py`
 
-**ゴール**: ページ変更時のメール通知が動作する
+**Goal**: Email notifications on page changes work correctly
 
-### 作業項目
+### Work Items
 
-- [ ] `mail/sendmail.py` — SMTP 送信
-  - メールヘッダの str/bytes
-  - MIME エンコーディング
-- [ ] `events/__init__.py` — イベントディスパッチ
-- [ ] `events/emailnotify.py` — メール通知ハンドラ
+- [ ] `mail/sendmail.py` — SMTP sending
+  - Mail header str/bytes
+  - MIME encoding
+- [ ] `events/__init__.py` — Event dispatch
+- [ ] `events/emailnotify.py` — Email notification handler
 
-### 検証手順
+### Verification
 
 ```bash
-# 1. wikiconfig.py で mail_from, mail_smarthost を設定
-# 2. ページを購読し、別ユーザーで編集
-# 3. メールが送信されることを確認
+# 1. Configure mail_from and mail_smarthost in wikiconfig.py
+# 2. Subscribe to a page, then edit it as a different user
+# 3. Confirm email is sent
 ```
 
 ---
 
 ## Session 8: XMLRPC API
 
-**対象モジュール**: `xmlrpc/__init__.py`, `xmlrpc/*.py`
+**Target modules**: `xmlrpc/__init__.py`, `xmlrpc/*.py`
 
-**ゴール**: XMLRPC 経由でのページ取得・更新が動作する
+**Goal**: Page retrieval and updates via XMLRPC work correctly
 
-### 作業項目
+### Work Items
 
-- [ ] `xmlrpc/__init__.py` — XmlRpcBase の動作確認
-- [ ] `xmlrpc.client` の bytes/str 処理
-- [ ] 基本 API: getPage, putPage, listPages
+- [ ] `xmlrpc/__init__.py` — Verify XmlRpcBase operation
+- [ ] `xmlrpc.client` bytes/str handling
+- [ ] Basic APIs: getPage, putPage, listPages
 
-### 検証手順
+### Verification
 
 ```python
 import xmlrpc.client
@@ -273,78 +273,78 @@ print(s.getAllPages())
 
 ---
 
-## Session 9: パーサーとフォーマッター
+## Session 9: Parsers and Formatters
 
-**対象モジュール**: `parser/`, `formatter/`
+**Target modules**: `parser/`, `formatter/`
 
-**ゴール**: 各種マークアップの解析と出力が正しく動作する
+**Goal**: All markup parsing and output rendering work correctly
 
-### 作業項目
+### Work Items
 
-- [ ] `parser/text_moin_wiki.py` — メインパーサーの全機能テスト
-- [ ] `parser/highlight.py` — Pygments 連携 (コードブロック)
-- [ ] `parser/text_csv.py` — CSV テーブル
-- [ ] `parser/text_rst.py` — reStructuredText (docutils 必要)
-- [ ] `formatter/text_html.py` — HTML 出力の検証
-- [ ] `formatter/text_plain.py` — プレーンテキスト出力
+- [ ] `parser/text_moin_wiki.py` — Full feature test of the main parser
+- [ ] `parser/highlight.py` — Pygments integration (code blocks)
+- [ ] `parser/text_csv.py` — CSV tables
+- [ ] `parser/text_rst.py` — reStructuredText (requires docutils)
+- [ ] `formatter/text_html.py` — HTML output verification
+- [ ] `formatter/text_plain.py` — Plain text output
 
-### 検証手順
+### Verification
 
 ```bash
-# 各種マークアップを含むテストページを作成して表示確認
-# - 見出し、リスト、テーブル、リンク、画像
-# - コードブロック ({{{#!python ... }}})
-# - マクロ (<<TableOfContents>>, <<Include(...)>>)
+# Create test pages with various markup and verify rendering:
+# - Headings, lists, tables, links, images
+# - Code blocks ({{{#!python ... }}})
+# - Macros (<<TableOfContents>>, <<Include(...)>>)
 ```
 
 ---
 
-## Session 10: テストスイートの近代化
+## Session 10: Test Suite Modernization
 
-**対象モジュール**: `_tests/`, 各パッケージの `_tests/`
+**Target modules**: `_tests/`, each package's `_tests/`
 
-**ゴール**: テストスイートの通過率を大幅に向上させる
+**Goal**: Significantly improve test suite pass rate
 
-### 作業項目
+### Work Items
 
-- [ ] `_tests/test_wikiutil.py` — yield-based テストを `@pytest.mark.parametrize` に書き換え
-- [ ] `_tests/test_wsgiapp.py` — 同上
-- [ ] 各パッケージの `_tests/` でのテスト通過状況を確認
-- [ ] `conftest.py` の改善 (必要に応じて)
-- [ ] `imp` → `importlib` の移行 (`config/multiconfig.py`)
+- [ ] `_tests/test_wikiutil.py` — Rewrite yield-based tests to `@pytest.mark.parametrize`
+- [ ] `_tests/test_wsgiapp.py` — Same as above
+- [ ] Check test pass status in each package's `_tests/`
+- [ ] Improve `conftest.py` (as needed)
+- [ ] `imp` → `importlib` migration (`config/multiconfig.py`)
 
-### 検証手順
+### Verification
 
 ```bash
-# 全テスト実行
+# Run all tests
 python -m pytest MoinMoin/ -v --ignore=MoinMoin/support/ -k "not xapian and not ldap and not openid" --tb=short 2>&1 | tail -20
 ```
 
-### 完了条件
+### Done Criteria
 
-- テスト通過率 80% 以上
-- yield-based テストが全て parametrize に変換されている
+- Test pass rate above 80%
+- All yield-based tests converted to parametrize
 
 ---
 
-## Session 11: codecs.open 一掃と残存 Python 2 コード除去
+## Session 11: codecs.open Cleanup and Remaining Python 2 Code Removal
 
-**対象**: 全モジュール横断
+**Target**: All modules (cross-cutting)
 
-**ゴール**: 残存する Python 2 パターンを全て除去する
+**Goal**: Remove all remaining Python 2 patterns
 
-### 作業項目
+### Work Items
 
-- [ ] `codecs.open()` → `open(encoding=)` (17ファイル)
-- [ ] `imp` モジュール → `importlib` (multiconfig.py)
-- [ ] 残存する `unicode` 型参照の除去 (docstring 含む)
-- [ ] `# -*- coding: iso-8859-1 -*-` ヘッダの除去
-- [ ] `has_key()` の残存箇所を `in` に変更
+- [ ] `codecs.open()` → `open(encoding=)` (17 files)
+- [ ] `imp` module → `importlib` (multiconfig.py)
+- [ ] Remove remaining `unicode` type references (including docstrings)
+- [ ] Remove `# -*- coding: iso-8859-1 -*-` headers
+- [ ] Replace remaining `has_key()` calls with `in`
 
-### 検証手順
+### Verification
 
 ```bash
-# 残存パターンの検索
+# Search for remaining patterns
 grep -rn "codecs.open" MoinMoin/ --include="*.py" | grep -v /support/
 grep -rn "import imp" MoinMoin/ --include="*.py" | grep -v /support/
 grep -rn "has_key" MoinMoin/ --include="*.py" | grep -v /support/
@@ -352,43 +352,43 @@ grep -rn "has_key" MoinMoin/ --include="*.py" | grep -v /support/
 
 ---
 
-## 全体の依存関係
+## Dependency Graph
 
 ```
-Session 1 (PageEditor)  ← 基盤。他の多くのセッションの前提
+Session 1 (PageEditor)  ← Foundation. Prerequisite for many other sessions
     ↓
-Session 2 (user/auth)   ← Session 3,6,7 の前提
+Session 2 (user/auth)   ← Prerequisite for Sessions 3, 6, 7
     ↓
 Session 3 (AttachFile)
-Session 4 (logfile/diff) ← Session 1 の後ならいつでも
-Session 5 (search)       ← 独立して実行可能
-Session 6 (security)     ← Session 2 の後
-Session 7 (mail)         ← Session 2 の後
-Session 8 (XMLRPC)       ← 独立して実行可能
-Session 9 (parser)       ← 独立して実行可能
-Session 10 (tests)       ← 全セッション後が理想だが途中でも可
-Session 11 (cleanup)     ← 最後に実行
+Session 4 (logfile/diff) ← Can start anytime after Session 1
+Session 5 (search)       ← Can be executed independently
+Session 6 (security)     ← After Session 2
+Session 7 (mail)         ← After Session 2
+Session 8 (XMLRPC)       ← Can be executed independently
+Session 9 (parser)       ← Can be executed independently
+Session 10 (tests)       ← Ideally after all sessions, but can start earlier
+Session 11 (cleanup)     ← Execute last
 ```
 
 ---
 
-## Session 12: ドキュメントの Python 3 対応
+## Session 12: Documentation Update for Python 3
 
-**対象**: `docs/INSTALL.html`, `docs/UPDATE.html`, `docs/resetpw/`
+**Target**: `docs/INSTALL.html`, `docs/UPDATE.html`, `docs/resetpw/`
 
-**ゴール**: 旧 Python 2 前提のドキュメントを Python 3 対応に更新する
+**Goal**: Update legacy Python 2 documentation for Python 3
 
-### 作業項目
+### Work Items
 
-- [ ] `docs/INSTALL.html` — Python 3.10+ 前提のインストール手順に書き換え
-  - Python 2.7 前提の記述を全て更新
-  - flup / CGI 前提の手順を削除し WSGI サーバー手順に置き換え
-- [ ] `docs/UPDATE.html` — Python 3 向けアップデート手順に書き換え
-- [ ] `docs/resetpw/` — パスワードリセット手順を Python 3 で検証・更新
-  - moin CLI コマンドの動作確認
-  - テンプレートの文字コード周りを確認
+- [ ] `docs/INSTALL.html` — Rewrite installation instructions for Python 3.10+
+  - Update all Python 2.7 references
+  - Remove flup / CGI instructions, replace with WSGI server instructions
+- [ ] `docs/UPDATE.html` — Rewrite update instructions for Python 3
+- [ ] `docs/resetpw/` — Verify and update password reset instructions for Python 3
+  - Verify moin CLI command operation
+  - Check template character encoding
 
-### 完了条件
+### Done Criteria
 
-- 各ドキュメントに Python 2.7 前提の記述が残っていないこと
-- 記載された手順が実際に動作すること
+- No Python 2.7 references remain in any document
+- All documented procedures actually work

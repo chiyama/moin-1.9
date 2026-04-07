@@ -1,34 +1,34 @@
-# コーディングポリシー
+# Coding Policy
 
-このプロジェクトで守るべきルール。根拠となる ADR へのリンクを付記する。
+Rules to follow in this project. Links to the relevant ADRs are included.
 
-## ファイルエンコーディング
-- 全テキストファイルは UTF-8
-- 旧 `# -*- coding: iso-8859-1 -*-` ヘッダは削除してよい
-- テキスト読み書き: `open(path, encoding='utf-8')`
-- バイナリ読み書き: `open(path, 'rb')` / `open(path, 'wb')`
-- `codecs.open()` は使わない → [ADR-003](../adr/003-string-bytes-boundary.md)
+## File Encoding
+- All text files must be UTF-8
+- Legacy `# -*- coding: iso-8859-1 -*-` headers may be removed
+- Text read/write: `open(path, encoding='utf-8')`
+- Binary read/write: `open(path, 'rb')` / `open(path, 'wb')`
+- Do not use `codecs.open()` — see [ADR-003](../adr/003-string-bytes-boundary.md)
 
-## str/bytes 境界
-→ [ADR-003](../adr/003-string-bytes-boundary.md) に従う
+## str/bytes Boundary
+Follow [ADR-003](../adr/003-string-bytes-boundary.md)
 
-## import スタイル
-- vendored ライブラリは直接 import: `import werkzeug`
-  - `from MoinMoin.support import ...` は使わない → [ADR-002](../adr/002-vendored-libs.md)
-- optional 依存は try/except ImportError で guard:
+## Import Style
+- Import vendored libraries directly: `import werkzeug`
+  - Do not use `from MoinMoin.support import ...` — see [ADR-002](../adr/002-vendored-libs.md)
+- Guard optional dependencies with try/except ImportError:
   `ldap`, `openid`, `xapian`, `MySQLdb`, `gdchart`
 
-## Python 2 → 3 で消えた API
-修正時に参照するリスト。**真実源はコード**。ここに無い問題もありうる。
+## Deprecated Python 2 APIs
+Reference list for fixes. **Truth source is the code**. Issues not listed here may also exist.
 
-| 旧 | 新 | 備考 |
+| Old | New | Notes |
 |---|---|---|
 | `time.clock()` | `time.perf_counter()` | |
 | `array.tostring()` | `array.tobytes()` | |
 | `except T, v:` | `except T as v:` | |
 | `string.maketrans` | `str.maketrans` | |
-| `dircache` | `os.listdir()` | モジュール削除 |
+| `dircache` | `os.listdir()` | Module removed |
 | `UserDict.DictMixin` | `collections.abc.MutableMapping` | |
-| `HTMLParseError` | (削除) | Py 3.5 で除去 |
-| `imp` | `importlib` | 移行 TODO あり |
-| `ImportError` メッセージ | `'foo' in str(err)` | Py3 ではクォート付き |
+| `HTMLParseError` | (removed) | Removed in Py 3.5 |
+| `imp` | `importlib` | Migration TODO exists |
+| `ImportError` message | `'foo' in str(err)` | Py3 includes quotes |

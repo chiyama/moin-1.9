@@ -1,40 +1,40 @@
-# テストポリシー
+# Testing Policy
 
-## フレームワーク
+## Framework
 pytest 9.x
 
-## テストファイルの配置
+## Test File Location
 `MoinMoin/<package>/_tests/test_*.py`
 
-## テスト実行
+## Running Tests
 ```bash
-# 単体
+# Single test file
 python -m pytest MoinMoin/_tests/test_error.py -v
 
-# コアテスト (既知の問題ファイルを除外)
+# Core tests (excluding known problematic files)
 python -m pytest MoinMoin/_tests/ \
   --ignore=MoinMoin/_tests/test_wikiutil.py \
   --ignore=MoinMoin/_tests/test_wsgiapp.py -v
 ```
 
-## テストインフラ
-- `conftest.py` の `pytest_runtest_setup` が `self.request` を inject する
-- テストクラスは `self.request` 経由で wiki コンテキストにアクセスする
+## Test Infrastructure
+- `conftest.py`'s `pytest_runtest_setup` injects `self.request`
+- Test classes access the wiki context via `self.request`
 
-## スモークテスト / 全量スキャン
+## Smoke Tests / Full Scan
 ```bash
-# スモークテスト (常時): 既知のPy3回帰パターン 7件, <3秒
+# Smoke tests (routine): 7 known Py3 regression patterns, <3 seconds
 python -m pytest MoinMoin/_tests/test_smoke.py::TestSmoke -v
 
-# 全量スキャン (マイルストーン時): 全ページGET, 500でないことを検証, ~70秒
+# Full scan (at milestones): GET all pages, verify no 500 errors, ~70 seconds
 python -m pytest MoinMoin/_tests/test_smoke.py --run-slow -v
 
-# クローラー (リリース前): 実サーバーでリンクを辿りながら検査
+# Crawler (pre-release): Follow links on a live server and inspect responses
 python wikiserver.py &
 python scripts/crawl-wiki.py --fail-on-500 --report crawl-report.json
 ```
 
-## 既知の制約
-- `test_wikiutil.py`, `test_wsgiapp.py` は yield-based テスト (deprecated)
-  - → `@pytest.mark.parametrize` への書き換えが必要 (TODO)
-- **真実源**: テストファイル自体と `python -m pytest` の実行結果
+## Known Constraints
+- `test_wikiutil.py`, `test_wsgiapp.py` use yield-based tests (deprecated)
+  - These need to be rewritten with `@pytest.mark.parametrize` (TODO)
+- **Truth source**: The test files themselves and the output of `python -m pytest`

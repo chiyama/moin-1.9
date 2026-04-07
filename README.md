@@ -1,7 +1,7 @@
 # MoinMoin
 
-MoinMoin wiki エンジンの Python 3 移植版。
-オリジナル MoinMoin 1.9.11 (Python 2.7) をフォークし、**Python 3.10+** で動作するよう移植した。
+Python 3 port of the MoinMoin wiki engine.
+Forked from the original MoinMoin 1.9.11 (Python 2.7) and ported to run on **Python 3.10+**.
 
 ## Quick Start
 
@@ -10,34 +10,34 @@ python3 -m venv .venv
 source .venv/bin/activate       # Linux/Mac
 # .venv\Scripts\activate        # Windows
 
-# 初回のみ: underlay データの展開
+# First time only: extract underlay data
 python -c "import tarfile; tarfile.open('wiki/underlay.tar').extractall('wiki/')"
 
-# 開発サーバー起動
+# Start development server
 python wikiserver.py
 # → http://localhost:8080/
 ```
 
-## 主要コマンド
+## Key Commands
 
-| コマンド | 用途 |
+| Command | Purpose |
 |---|---|
-| `python wikiserver.py` | 開発サーバー起動 |
-| `python -m pytest MoinMoin/_tests/test_error.py -v` | テスト実行 (単体) |
-| `pip install -e .` | 開発用インストール |
+| `python wikiserver.py` | Start development server |
+| `python -m pytest MoinMoin/_tests/test_error.py -v` | Run tests (single file) |
+| `pip install -e .` | Install in development mode |
 
-## ドキュメントマップ
+## Documentation Map
 
-| パス | 内容 |
+| Path | Description |
 |---|---|
-| [CLAUDE.md](CLAUDE.md) | AI エージェント向け作業入口 |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | モジュール構造・成熟度 |
-| [docs/adr/](docs/adr/) | 採用済み設計判断 (ADR) |
-| [docs/policies/](docs/policies/) | コーディング・テスト規約 |
-| [docs/runbooks/modernize.md](docs/runbooks/modernize.md) | 近代化作業計画 |
-| [docs/REQUIREMENTS](docs/REQUIREMENTS) | 依存関係 |
-| [docs/INSTALL.html](docs/INSTALL.html) | インストール手順 (Py3 向け更新 TODO) |
-| [docs/licenses/](docs/licenses/) | ライセンス |
+| [CLAUDE.md](CLAUDE.md) | AI agent work entry point |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module structure and maturity |
+| [docs/adr/](docs/adr/) | Architecture Decision Records (ADR) |
+| [docs/policies/](docs/policies/) | Coding and testing conventions |
+| [docs/runbooks/modernize.md](docs/runbooks/modernize.md) | Modernization work plan |
+| [docs/REQUIREMENTS](docs/REQUIREMENTS) | Dependencies |
+| [docs/INSTALL.html](docs/INSTALL.html) | Installation guide (Py3 update TODO) |
+| [docs/licenses/](docs/licenses/) | Licenses |
 
 ## License
 

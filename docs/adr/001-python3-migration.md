@@ -1,27 +1,27 @@
-# ADR-001: Python 2 → Python 3 移行
+# ADR-001: Python 2 to Python 3 Migration
 
 ## Status
 Accepted (2024)
 
 ## Background
-MoinMoin 1.9.11 は Python 2.7 専用だった。Python 2 の EOL (2020-01-01) により、
-セキュリティパッチの適用やライブラリの更新が困難になっていた。
+MoinMoin 1.9.11 was originally Python 2.7 only. With Python 2 reaching EOL (2020-01-01),
+applying security patches and updating libraries had become increasingly difficult.
 
 ## Decision
-MoinMoin 1.9.11 を Python 3.10+ へ移植する。`py3-migration` ブランチで作業する。
+Migrate MoinMoin 1.9.11 to Python 3.10+. Work is done on the `py3-migration` branch.
 
-移植方針:
-- 2to3 の自動変換 + 手動修正
-- bundled ライブラリ (werkzeug, passlib, pygments) は Py3 対応版に更新
-- Py2 専用の依存 (flup, xappy) は削除
-- 段階的に動作確認: import → テスト → 手動検証
+Migration strategy:
+- 2to3 automatic conversion + manual fixes
+- Bundled libraries (werkzeug, passlib, pygments) updated to Py3-compatible versions
+- Py2-only dependencies (flup, xappy) removed
+- Incremental verification: import → tests → manual testing
 
 ## Alternatives Considered
-- MoinMoin 2.0 への移行: 別プロジェクトであり、データ互換性なし
-- 新規 wiki エンジンへの置換: 既存データとカスタマイズの移行コストが大きい
+- Migrate to MoinMoin 2.0: A separate project with no data compatibility
+- Replace with a new wiki engine: High migration cost for existing data and customizations
 
 ## Consequences
-- `str` = テキスト、`bytes` = バイナリの境界を全モジュールで明確化する必要がある
-- `codecs.open()` → `open(encoding=)` への統一が必要
-- テストスイートの近代化 (yield-based → parametrize) が必要
-- 詳細ルールは [docs/policies/coding.md](../policies/coding.md) を参照
+- The `str` = text, `bytes` = binary boundary must be clarified across all modules
+- `codecs.open()` must be replaced with `open(encoding=)`
+- Test suite modernization required (yield-based → parametrize)
+- Detailed rules in [docs/policies/coding.md](../policies/coding.md)

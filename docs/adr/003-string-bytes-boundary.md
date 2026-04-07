@@ -1,31 +1,31 @@
-# ADR-003: str/bytes 境界ルール
+# ADR-003: str/bytes Boundary Rules
 
 ## Status
 Accepted
 
 ## Background
-Python 2 では `str` と `unicode` が暗黙変換されたが、Python 3 では
-`str` (テキスト) と `bytes` (バイナリ) は明確に区別される。
-MoinMoin は wiki テキスト、ファイル I/O、HTTP、キャッシュ (pickle) など
-多様なデータ形式を扱うため、境界を明確にする必要がある。
+In Python 2, `str` and `unicode` were implicitly convertible. In Python 3,
+`str` (text) and `bytes` (binary) are strictly distinguished.
+MoinMoin handles diverse data formats — wiki text, file I/O, HTTP, cache (pickle) —
+so clear boundaries are essential.
 
 ## Decision
 
-| データ種別 | 型 |
+| Data Type | Python Type |
 |---|---|
-| Wiki ページ内容、ページ名、ユーザー入力 | `str` |
-| ファイルシステムパス | `str` |
-| HTTP レスポンスボディ | `bytes` |
-| キャッシュデータ、pickle データ | `bytes` |
-| hashlib / hmac の引数 | `bytes` (文字列は `.encode()` してから渡す) |
-| ログファイル I/O | `bytes` (行単位でデコード) |
+| Wiki page content, page names, user input | `str` |
+| Filesystem paths | `str` |
+| HTTP response body | `bytes` |
+| Cache data, pickle data | `bytes` |
+| hashlib / hmac arguments | `bytes` (encode strings with `.encode()` before passing) |
+| Log file I/O | `bytes` (decode line by line) |
 
-テキストファイルの読み書き:
-- `open(path, encoding='utf-8')` を使う
-- `codecs.open()` は使わない (ADR-001 参照)
-- バイナリファイルは `open(path, 'rb')` / `open(path, 'wb')`
+Text file read/write:
+- Use `open(path, encoding='utf-8')`
+- Do not use `codecs.open()` (see ADR-001)
+- For binary files: `open(path, 'rb')` / `open(path, 'wb')`
 
 ## Consequences
-- 全モジュールで上記境界を遵守する
-- 違反箇所は `str`/`bytes` の `TypeError` として実行時に検出される
-- 検証: `python -m pytest` でテストを実行し、TypeError が出ないことを確認
+- All modules must follow the boundaries above
+- Violations will surface as `str`/`bytes` `TypeError` at runtime
+- Verification: Run `python -m pytest` and confirm no TypeError occurs
