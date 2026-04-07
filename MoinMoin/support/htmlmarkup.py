@@ -13,7 +13,7 @@
 # individuals. For exact contribution history, see the revision
 # history and logs, available at http://projects.edgewall.com/trac/.
 
-import html.entities
+import html.entities as _html_entities
 from html.parser import HTMLParser
 
 # HTMLParseError was removed in Python 3.5
@@ -81,7 +81,7 @@ class Markup(str):
                 if keepxmlentities and ref in ('amp', 'apos', 'gt', 'lt', 'quot'):
                     return '&%s;' % ref
                 try:
-                    codepoint = html.entities.name2codepoint[ref]
+                    codepoint = _html_entities.name2codepoint[ref]
                     return chr(codepoint)
                 except KeyError:
                     if keepxmlentities:

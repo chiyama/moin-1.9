@@ -142,8 +142,8 @@
 - **影響範囲**: 1ページのみ (HTML パーサー埋め込みのある特定ページ)
 - **ファイル**: `MoinMoin/support/htmlmarkup.py:84`
 - **エラー**: `AttributeError: 'Element' object has no attribute 'name2codepoint'`
-- **原因**: `html` モジュールが他の import で shadowed されている可能性
-- **状態**: 未修正 — `MoinMoin/support/` は vendored コードのため編集禁止
+- **原因**: モジュール末尾の `html = Tags()` が `import html.entities` を shadowing
+- **状態**: 修正済み — `import html.entities as _html_entities` でリネーム
 
 ---
 
