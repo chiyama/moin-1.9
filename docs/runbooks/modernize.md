@@ -369,3 +369,26 @@ Session 9 (parser)       ← 独立して実行可能
 Session 10 (tests)       ← 全セッション後が理想だが途中でも可
 Session 11 (cleanup)     ← 最後に実行
 ```
+
+---
+
+## Session 12: ドキュメントの Python 3 対応
+
+**対象**: `docs/INSTALL.html`, `docs/UPDATE.html`, `docs/resetpw/`
+
+**ゴール**: 旧 Python 2 前提のドキュメントを Python 3 対応に更新する
+
+### 作業項目
+
+- [ ] `docs/INSTALL.html` — Python 3.10+ 前提のインストール手順に書き換え
+  - Python 2.7 前提の記述を全て更新
+  - flup / CGI 前提の手順を削除し WSGI サーバー手順に置き換え
+- [ ] `docs/UPDATE.html` — Python 3 向けアップデート手順に書き換え
+- [ ] `docs/resetpw/` — パスワードリセット手順を Python 3 で検証・更新
+  - moin CLI コマンドの動作確認
+  - テンプレートの文字コード周りを確認
+
+### 完了条件
+
+- 各ドキュメントに Python 2.7 前提の記述が残っていないこと
+- 記載された手順が実際に動作すること

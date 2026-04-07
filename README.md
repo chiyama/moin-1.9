@@ -1,60 +1,43 @@
 # MoinMoin
 
-MoinMoin is a wiki engine - a software you can use to run your own wiki site.
-
-MoinMoin is written in Python. **Python 3.10 or later is required.**
-
-This is a fork of MoinMoin 1.9.11 that has been ported to Python 3.
-The original MoinMoin 1.9.x only supported Python 2.7.
+MoinMoin wiki エンジンの Python 3 移植版。
+オリジナル MoinMoin 1.9.11 (Python 2.7) をフォークし、**Python 3.10+** で動作するよう移植した。
 
 ## Quick Start
 
 ```bash
-# Create a virtual environment
 python3 -m venv .venv
 source .venv/bin/activate       # Linux/Mac
 # .venv\Scripts\activate        # Windows
 
-# Extract underlay data (first time only)
+# 初回のみ: underlay データの展開
 python -c "import tarfile; tarfile.open('wiki/underlay.tar').extractall('wiki/')"
 
-# Start the development server
+# 開発サーバー起動
 python wikiserver.py
-
-# Open http://localhost:8080/ in your browser
+# → http://localhost:8080/
 ```
 
-## Documentation
+## 主要コマンド
 
-Local:
+| コマンド | 用途 |
+|---|---|
+| `python wikiserver.py` | 開発サーバー起動 |
+| `python -m pytest MoinMoin/_tests/test_error.py -v` | テスト実行 (単体) |
+| `pip install -e .` | 開発用インストール |
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Module structure and migration status
-- [docs/MODERNIZE.md](docs/MODERNIZE.md) - Session-based modernization work plan
-- [docs/CHANGES](docs/CHANGES) - Version history
-- [docs/REQUIREMENTS](docs/REQUIREMENTS) - List of requirements
-- [docs/INSTALL.html](docs/INSTALL.html) - Installation instructions
-- [docs/README.migration](docs/README.migration) - Data conversion instructions
-- [CLAUDE.md](CLAUDE.md) - Development guide and conventions
+## ドキュメントマップ
 
-On the Web:
-
-- [MoinMoin homepage](https://moinmo.in/)
-
-## Migration Status
-
-This port covers the following changes from the original Python 2.7 codebase:
-
-- All `print` statements converted to `print()` functions
-- All `except Type, var` converted to `except Type as var`
-- `unicode` / `basestring` / `long` types replaced with `str` / `int`
-- `dict.has_key()` replaced with `in` operator
-- Standard library module renames (`StringIO`, `urllib2`, `xmlrpclib`, etc.)
-- `file()` builtin replaced with `open()`
-- Vendored libraries (werkzeug, passlib, pygments) verified for Python 3
-
-The wiki server starts and serves pages. Some features (page editing, user
-registration, attachments, email) need further testing and fixes. See
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for per-module status.
+| パス | 内容 |
+|---|---|
+| [CLAUDE.md](CLAUDE.md) | AI エージェント向け作業入口 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | モジュール構造・成熟度 |
+| [docs/adr/](docs/adr/) | 採用済み設計判断 (ADR) |
+| [docs/policies/](docs/policies/) | コーディング・テスト規約 |
+| [docs/runbooks/modernize.md](docs/runbooks/modernize.md) | 近代化作業計画 |
+| [docs/REQUIREMENTS](docs/REQUIREMENTS) | 依存関係 |
+| [docs/INSTALL.html](docs/INSTALL.html) | インストール手順 (Py3 向け更新 TODO) |
+| [docs/licenses/](docs/licenses/) | ライセンス |
 
 ## License
 
