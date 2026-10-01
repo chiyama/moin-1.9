@@ -7,7 +7,7 @@ MoinMoin - Dump a MoinMoin wiki to static pages
 @license: GNU GPL, see COPYING for details.
 """
 
-import sys, os, time, codecs, shutil, re, errno
+import sys, os, time, shutil, re, errno
 
 from MoinMoin import config, wikiutil, Page, user
 from MoinMoin import script
@@ -68,7 +68,6 @@ td.noborder {
 
 
 def _attachment(request, pagename, filename, outputdir, **kw):
-    filename = filename.encode(config.charset)
     source_dir = AttachFile.getAttachDir(request, pagename)
     source_file = os.path.join(source_dir, filename)
     dest_dir = os.path.join(outputdir, "attachments", wikiutil.quoteWikinameFS(pagename))
@@ -173,7 +172,7 @@ General syntax: moin [options] export dump [dump-options]
         AttachFile.getAttachUrl = lambda pagename, filename, request, **kw: _attachment(request, pagename, filename, outputdir, **kw)
 
         errfile = os.path.join(outputdir, 'error.log')
-        errlog = open(errfile, 'w')
+        errlog = open(errfile, 'w', encoding='utf-8')
         errcnt = 0
 
         page_front_page = wikiutil.getLocalizedPage(request, request.cfg.page_front_page).page_name
@@ -207,7 +206,7 @@ General syntax: moin [options] export dump [dump-options]
             finally:
                 timestamp = time.strftime("%Y-%m-%d %H:%M")
                 filepath = os.path.join(outputdir, file)
-                fileout = codecs.open(filepath, 'w', config.charset)
+                fileout = open(filepath, 'w', encoding=config.charset)
                 fileout.write(page_template % {
                     'charset': config.charset,
                     'pagename': pagename,

@@ -127,6 +127,29 @@ class TestSmoke(_WikiClient):
         """CSV parser: text_csv.py encode/decode removed for Py3."""
         self._assert_no_500('/HelpOnParsers')
 
+    def test_attachment_get_image(self):
+        """AttachFile._do_get: binary body, Content-Disposition without b'...'."""
+        appiter, status, headers = self.client.get(
+            '/HelpOnImages?action=AttachFile&do=get&target=duckie.png')
+        body = b''.join(appiter)
+        assert status[:3] == '200'
+        assert body.startswith(b'\x89PNG\r\n\x1a\n')
+        assert headers['Content-Disposition'] == 'inline; filename="duckie.png"'
+
+    def test_attachment_view_text(self):
+        """AttachFile.send_viewfile: text attachment read as bytes, then decoded."""
+        status, body = self._get(
+            '/WikiCourse/18%20Attachments?action=AttachFile&do=view&target=letter.txt')
+        assert status[:3] == '200'
+
+    def test_attachment_box_drawing(self):
+        """AttachFile._do_box: member of a TWikiDraw container (tar file)."""
+        appiter, status, headers = self.client.get(
+            '/AiutoSuDisegni?action=AttachFile&do=box&target=twikitest.tdraw&member=drawing.png')
+        body = b''.join(appiter)
+        assert status[:3] == '200'
+        assert body.startswith(b'\x89PNG')
+
 
 # ---------------------------------------------------------------------------
 # 2. Full-page scan — every page, no 500

@@ -116,7 +116,7 @@ class AnyWikiDraw(object):
             AttachFile._addLogEntry(request, 'ATTDRW', pagename, target)
             ci.truncate()
             filecontent = filecontent.read() # read file completely into memory
-            filecontent = filecontent.replace("\r", "")
+            filecontent = filecontent.replace(b"\r", b"")
         elif ext == '.map':
             # touch attachment directory to invalidate cache if new map is saved
             attach_dir = AttachFile.getAttachDir(request, pagename)
