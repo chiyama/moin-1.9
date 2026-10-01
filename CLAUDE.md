@@ -1,5 +1,10 @@
 # CLAUDE.md — Agent Work Entry Point
 
+## Scope and Security Policy
+- This repository maintains MoinMoin itself. Decisions on how sites that use it are operated are made elsewhere.
+- Aim to resolve every known vulnerability as far as possible; known vulnerabilities come first when choosing work.
+- Inventory and status: [docs/security/vulnerabilities.md](docs/security/vulnerabilities.md). Details: [ADR-004](docs/adr/004-scope-and-security-policy.md)
+
 ## Read First
 1. This document (workflow and prohibitions)
 2. [docs/policies/coding.md](docs/policies/coding.md) — Coding rules
