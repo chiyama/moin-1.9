@@ -163,6 +163,17 @@ class TestSmoke(_WikiClient):
         b''.join(appiter)
         assert status[:3] == '404'
 
+    @pytest.mark.parametrize("path", [
+        '/FrontPage?action=fckdialog&dialog=link&pagename=a%22b',
+        '/a%22b?action=fckdialog&dialog=link',
+        '/a%22b?action=fckdialog&dialog=attachment',
+    ])
+    def test_fckdialog_escapes_quotes_in_attributes(self, path):
+        """fckdialog: request values in value="..." have '"' escaped (vulnerabilities.md U-1)."""
+        status, body = self._get(path)
+        assert status[:3] == '200'
+        assert '="a"b' not in body  # quote would end the attribute value
+
     @pytest.mark.parametrize("pagename", [
         'TitleIndex',        # getUnicodeIndexGroup: unichr, float division (Hangul names)
         'PageSize',           # sort of (size, Page) tuples

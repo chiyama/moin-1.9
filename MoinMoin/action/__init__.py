@@ -291,18 +291,25 @@ def do_recall(pagename, request):
     """ same as do_show, but never caches and never counts hits """
     do_show(pagename, request, count_hit=0, cacheable=0)
 
+_refresh_key_re = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.-]*')
+
+def valid_refresh_key(key):
+    """ True if key is a plain cache file name (no path, no leading dot) """
+    return bool(_refresh_key_re.fullmatch(key))
+
 def do_refresh(pagename, request):
     """ Handle refresh action """
     # Without arguments, refresh action will refresh the page text_html cache.
+    # Only the page's own cache can be refreshed: the arena must be 'Page.py'
+    # and the key a plain file name, since both come from the request.
     arena = request.values.get('arena', 'Page.py')
-    if arena == 'Page.py':
-        arena = Page(request, pagename)
     key = request.values.get('key', 'text_html')
-
-    # Remove cache entry (if exists), and send the page
-    from MoinMoin import caching
-    caching.CacheEntry(request, arena, key, scope='item').remove()
-    caching.CacheEntry(request, arena, "pagelinks", scope='item').remove()
+    if arena == 'Page.py' and valid_refresh_key(key) and request.user.may.read(pagename):
+        # Remove cache entry (if exists)
+        from MoinMoin import caching
+        arena = Page(request, pagename)
+        caching.CacheEntry(request, arena, key, scope='item').remove()
+        caching.CacheEntry(request, arena, "pagelinks", scope='item').remove()
     do_show(pagename, request)
 
 def do_goto(pagename, request):

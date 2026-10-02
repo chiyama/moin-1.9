@@ -29,8 +29,7 @@ Ranked by reachability and impact. Work these first, one per session.
 | 2 | [V-1](#v-vendored-libraries) werkzeug 1.0.1 multipart DoS | Reachable by anonymous users with any POST |
 | 3 | [V-5](#v-vendored-libraries) pygments 2.5.2 ReDoS / infinite loop | Reachable by anyone who can edit a page |
 | 4 | [P-1](#p-weaknesses-and-defects-introduced-by-the-port)..P-5 port defects in security code | Fail closed today, but each fix must avoid reintroducing upstream weaknesses (see U-3) |
-| 5 | [U-1](#u-upstream-moinmoin-19) fckdialog attribute injection | Possible XSS without login; not yet confirmed at runtime |
-| 6 | [T-1](#t-test-coverage-of-security-code) security tests not running | Without them, fixes above cannot be pinned |
+| 5 | [T-1](#t-test-coverage-of-security-code) security tests not running | Without them, fixes above cannot be pinned |
 
 ## R. Runtime
 
@@ -100,7 +99,8 @@ Open items inherited from upstream:
 
 | ID | Summary | Status | Evidence / notes |
 |---|---|---|---|
-| U-1 | `fckdialog` writes a request value into `value="..."` escaped with `wikiutil.escape(name)` (no `quote=True`), so `"` is not escaped. Possible attribute injection; the action has no ACL check and is not in `actions_excluded`. Same in upstream 1.9.11. | open (unverified at runtime) | `action/fckdialog.py:206,303`; same pattern in hidden inputs at `:248,298,386,446` |
+| U-1 | `fckdialog` wrote request values (the `pagename` parameter, and the page name taken from the URL path) into `value="..."` escaped without `quote=True`, so `"` ended the attribute: reflected XSS by anonymous GET. Same in upstream 1.9.11. Confirmed by test before the fix. | fixed | `action/fckdialog.py` `link_dialog`, `attachment_dialog`: `wikiutil.escape(..., quote=True)`. Test: `_tests/test_smoke.py` `test_fckdialog_escapes_quotes_in_attributes` |
+| U-5 | The `refresh` action took `arena` and `key` from the request and removed the file `os.path.join(<page cache dir>, key)`, with no check on `key` (`../`, absolute paths) and no read ACL check. An anonymous GET could remove files writable by the wiki process. Found by code reading; same in upstream 1.9.11 (`do_refresh` in `master:MoinMoin/action/__init__.py`). Not exercised at runtime. | fixed | `action/__init__.py` `do_refresh`: only `arena=Page.py`; `key` must match `[A-Za-z0-9_][A-Za-z0-9_.-]*` (`valid_refresh_key`); the user must be able to read the page. Test: `action/_tests/test_refresh.py` |
 | U-2 | XML types outside `mimetypes_xss_protect` (e.g. `text/xml`) are served inline. Same as upstream; mapping depends on the host's `mimetypes` data. | unverified | `config/multiconfig.py` `mimetypes_xss_protect` |
 | U-3 | Password recovery token can be forged for a user who never requested a reset: `recoverpass_key` is `""`, so the HMAC key is empty. Upstream weakness; currently unreachable because of P-3. | mitigated by P-3 (must not be reintroduced) | `user.py:1261-1281` |
 | U-4 | `htmlmarkup.py` (2006 Trac sanitizer) CSS filter does not decode CSS escapes/comments (matters only for legacy IE); attribute without value may raise `TypeError`. 23 sanitizer payloads tested OK. | unverified | `support/htmlmarkup.py:244-257` |
