@@ -236,11 +236,11 @@ class WriteLock(ExclusiveLock):
                         break
                     timer.sleep()
             finally:
-                if result:
-                    logging.debug('acquired write lock: %s' % self.lockDir)
-                    return True
-                else:
+                if not result:
                     self.release()
+            if result:
+                logging.debug('acquired write lock: %s' % self.lockDir)
+                return True
         return False
 
     # Private -------------------------------------------------------
