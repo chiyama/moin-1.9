@@ -317,6 +317,13 @@ class GivenAuth(BaseAuth):
     def decode_username(self, name):
         """ decode the name we got from the environment var to unicode """
         if isinstance(name, str):
+            # WSGI (PEP 3333) environ values are bytes decoded as latin-1;
+            # get the bytes back so we can decode them with the right coding.
+            try:
+                name = name.encode('iso-8859-1')
+            except UnicodeEncodeError:
+                return name # not from a WSGI environ, already decoded
+        if isinstance(name, bytes):
             if self.coding:
                 name = name.decode(self.coding)
             else:

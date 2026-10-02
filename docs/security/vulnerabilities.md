@@ -28,7 +28,7 @@ Ranked by reachability and impact. Work these first, one per session.
 | 1 | [R-1](#r-runtime) Python 3.10 end of life | No security fixes for the interpreter at all; blocks nothing else but affects everything |
 | 2 | [V-1](#v-vendored-libraries) werkzeug 1.0.1 multipart DoS | Reachable by anonymous users with any POST |
 | 3 | [V-5](#v-vendored-libraries) pygments 2.5.2 ReDoS / infinite loop | Reachable by anyone who can edit a page |
-| 4 | [P-1](#p-weaknesses-and-defects-introduced-by-the-port)..P-5 port defects in security code | Fail closed today, but each fix must avoid reintroducing upstream weaknesses (see U-3) |
+| 4 | [P-1](#p-weaknesses-and-defects-introduced-by-the-port), P-3 port defects in security code | Fail closed today, but each fix must avoid reintroducing upstream weaknesses (see U-3). P-2, P-4 (GivenAuth), P-5 are fixed |
 | 5 | [T-1](#t-test-coverage-of-security-code) security tests not running | Without them, fixes above cannot be pinned |
 
 ## R. Runtime
@@ -113,10 +113,10 @@ make security-related features crash (HTTP 500) or reject (fail closed).
 | ID | Summary | Severity | Evidence | Fix note |
 |---|---|---|---|---|
 | P-1 | `{SHA}`/`{SSHA}` password verification calls `base64.decodestring`/`encodestring` (removed in 3.9): login of such users returns 500; hash upgrade never happens | medium (availability) | `user.py:716-726`; `{SSHA}` encoding also double-encodes at `user.py:283-291` | Use `base64.b64decode`/`b64encode` with bytes; this is the cause of `test_user.py` baseline failures |
-| P-2 | `clean_input` calls `.decode()` on `str`: any non-empty input returns 500. Breaks attachment upload over HTTP, edit/rename/delete comments, recoverpass, newaccount email, userprefs | medium (availability) | `wikiutil.py:208-211` | Decode only `bytes` |
+| P-2 | `clean_input` called `.decode()` on `str`: any non-empty input returned 500 (attachment upload over HTTP, edit/rename/delete comments, recoverpass, newaccount email, userprefs) | fixed | `wikiutil.clean_input` decodes only `bytes`. Test: `_tests/test_write_path.py` `test_clean_input_str` | — |
 | P-3 | `hmac.new` gets a `str` key: password recovery tokens (500), TextCha (form 500, every answer rejected), cache keys (500) | low (fail closed) | `user.py:1263,1281`; `security/textcha.py:87`; `action/cache.py:102` | Encode keys; for recovery tokens, also reject an empty `recoverpass_key` (U-3) |
-| P-4 | `.decode()` on `str` in HTTP/SSL-cert/Given auth with `coding` set: login with credentials returns 500 | low (fail closed) | `auth/http.py:84-85`; `auth/sslclientcert.py:47,51`; `auth/__init__.py:320` | — |
-| P-5 | XML-RPC: module name `xmlrpc` shadowed by a function, every request 500 | low (disabled by default) | `xmlrpc/__init__.py:131,158` | — |
+| P-4 | `.decode()` on `str` in HTTP/SSL-cert/Given auth with `coding` set: login with credentials returns 500 | GivenAuth fixed; HTTP and SSL-cert auth open (low, fail closed) | `GivenAuth.decode_username` re-encodes the WSGI (latin-1) str to bytes, then decodes with `coding` or as UTF-8. Test: `_tests/test_write_path.py`. Still open: `auth/http.py:84-85`, `auth/sslclientcert.py:47,51` | Same treatment as GivenAuth |
+| P-5 | XML-RPC: module name `xmlrpc` shadowed by a function, every request 500; v2 also returned page text as base64 `Binary` (bytes) instead of a string | fixed | `xmlrpc/__init__.py` imports `xmlrpc.client as xmlrpclib`; `XmlRpc2._outstr` returns `str`. Test: `_tests/test_write_path.py` (putPage/getPage with GivenAuth and ACL) | — |
 | P-6 | Other Py3 breakage seen during the audit (not security): `unichr`; macros TitleIndex (Hangul page names), PageSize, AdvancedSearch, PageList; `AttachFile do=box` returned 500 for a missing container member or a non-tar target | fixed | `wikiutil.getUnicodeIndexGroup`, `formatter/text_docbook.py`, `macro/PageSize.py`, `macro/AdvancedSearch.py`, `search/results.py` sort keys, `AttachFile._do_box` (404). Tests: `_tests/test_smoke.py` | — |
 
 Checks confirmed intact (scratch tests, 2026-10-02): ticket create/check rejects forged,
@@ -127,6 +127,19 @@ pages for show/raw/print/info/diff/AttachFile; `actions_excluded`/`actions_super
 `taintfilename` blocks traversal; `.html`/`.svg`/`.swf` attachments served as `attachment`;
 HTML sanitizer strips script, event handlers, `javascript:`/`data:`; surge protection;
 `LocalBadContent`; session id validation.
+
+## C. Configuration behaviour relevant to security
+
+Not defects. These describe what an option does, so that a site can be configured
+knowingly (ADR-004: operating decisions are made elsewhere).
+
+| ID | Behaviour | Evidence |
+|---|---|---|
+| C-1 | `GivenAuth(env_var='HTTP_REMOTE_USER')` trusts a `Remote-User` request header from any client that reaches the wiki process. Whatever sits in front must set or clear that header on every request. | `auth/__init__.py` `GivenAuth.request`; `_tests/test_write_path.py` sends the header directly |
+| C-2 | `xmlrpc_overwrite_user = True` (default) replaces the user authenticated by GivenAuth with an invalid user at the start of every XML-RPC call; only `getAuthToken`/`applyAuthToken` log in then. With `False`, XML-RPC runs as the GivenAuth user. | `xmlrpc/__init__.py` `XmlRpcBase.process` |
+| C-3 | Surge protection exempts `REMOTE_ADDR` starting with `127.`. Behind a reverse proxy on the same host nothing is rate limited, unless the WSGI app is built with `make_application(trusted_proxies=[...])`, which takes the client address from `X-Forwarded-For`. | `web/utils.py` `check_surge_protect`; `web/serving.py` `ProxyTrust` |
+| C-4 | `show_hosts = True` (default) shows editors' host names / IP addresses in `info` and RecentChanges to everyone who can read the page. | `config/multiconfig.py` `show_hosts` |
+| C-5 | `createTicket` uses the session id only when the session is non-empty, so a form fetched as the first request of a new session carries a ticket that fails once the session has content. Same in upstream 1.9.11. Browsers that view a page before editing are not affected. | `wikiutil.createTicket` (`if request.session:`) |
 
 ## T. Test coverage of security code
 

@@ -205,9 +205,9 @@ def clean_input(text, max_len=201):
     if length == 0 or length > max_len:
         return u''
     else:
-        if isinstance(text, str):
-            # the translate() below can ONLY process unicode, thus, if we get
-            # str, we try to decode it using the usual coding:
+        if isinstance(text, bytes):
+            # the translate() below can ONLY process str, thus, if we get
+            # bytes, we try to decode it using the usual coding:
             text = text.decode(config.charset)
         return text.translate(config.clean_input_translation_map)
 
