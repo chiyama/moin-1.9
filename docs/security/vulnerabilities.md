@@ -117,7 +117,7 @@ make security-related features crash (HTTP 500) or reject (fail closed).
 | P-3 | `hmac.new` gets a `str` key: password recovery tokens (500), TextCha (form 500, every answer rejected), cache keys (500) | low (fail closed) | `user.py:1263,1281`; `security/textcha.py:87`; `action/cache.py:102` | Encode keys; for recovery tokens, also reject an empty `recoverpass_key` (U-3) |
 | P-4 | `.decode()` on `str` in HTTP/SSL-cert/Given auth with `coding` set: login with credentials returns 500 | low (fail closed) | `auth/http.py:84-85`; `auth/sslclientcert.py:47,51`; `auth/__init__.py:320` | — |
 | P-5 | XML-RPC: module name `xmlrpc` shadowed by a function, every request 500 | low (disabled by default) | `xmlrpc/__init__.py:131,158` | — |
-| P-6 | Other Py3 breakage seen during the audit (not security): `unichr` | low | `wikiutil.py:2321`; `formatter/text_docbook.py:832,837` | — |
+| P-6 | Other Py3 breakage seen during the audit (not security): `unichr`; macros TitleIndex (Hangul page names), PageSize, AdvancedSearch, PageList; `AttachFile do=box` returned 500 for a missing container member or a non-tar target | fixed | `wikiutil.getUnicodeIndexGroup`, `formatter/text_docbook.py`, `macro/PageSize.py`, `macro/AdvancedSearch.py`, `search/results.py` sort keys, `AttachFile._do_box` (404). Tests: `_tests/test_smoke.py` | — |
 
 Checks confirmed intact (scratch tests, 2026-10-02): ticket create/check rejects forged,
 expired, wrong-action and empty tickets with constant-time comparison; `{PASSLIB}`,

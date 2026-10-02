@@ -1018,6 +1018,14 @@ def _do_box(pagename, request):
     else:
         ci = ContainerItem(request, pagename, filename)
         filename = wikiutil.taintfilename(request.values['member'])
+        try:
+            member_file = ci.get(filename)
+        except (KeyError, tarfile.TarError):
+            # not a container, or no such member (e.g. pre-1.6 drawings
+            # store <name>.png instead of drawing.png)
+            error_msg(pagename, request, _("Attachment '%(filename)s' does not exist!") % {'filename': filename})
+            request.status_code = 404
+            return
         mt = wikiutil.MimeType(filename=filename)
         content_type = mt.content_type()
         mime_type = mt.mime_type()
@@ -1038,7 +1046,7 @@ def _do_box(pagename, request):
         request.headers['Content-Disposition'] = content_dispo_string
 
         # send data
-        request.send_file(ci.get(filename))
+        request.send_file(member_file)
 
 
 def _do_get(pagename, request):

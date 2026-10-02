@@ -43,7 +43,13 @@
     @license: GNU GPL, see COPYING for details.
 """
 
+import re
+
 import pytest
+
+# rendered macro failure, e.g. "<<TitleIndex: execution failed [...] (see also the log)>>";
+# help pages quote the template "<<%(macro_name)s: execution failed ...", which must not match
+MACRO_FAILED = re.compile(r'&lt;&lt;\w+(?:\(.*?\))?: execution failed \[')
 
 
 # ---------------------------------------------------------------------------
@@ -150,6 +156,25 @@ class TestSmoke(_WikiClient):
         assert status[:3] == '200'
         assert body.startswith(b'\x89PNG')
 
+    def test_attachment_box_missing_member(self):
+        """AttachFile._do_box: old (2004) container without drawing.png gives 404, not 500."""
+        appiter, status, headers = self.client.get(
+            '/WikiZandbak?action=AttachFile&do=box&target=mijntest.tdraw&member=drawing.png')
+        b''.join(appiter)
+        assert status[:3] == '404'
+
+    @pytest.mark.parametrize("pagename", [
+        'TitleIndex',        # getUnicodeIndexGroup: unichr, float division (Hangul names)
+        'PageSize',           # sort of (size, Page) tuples
+        'FindPage',           # AdvancedSearch: str.decode on mimetypes
+        'CategorieCategorie', # PageList: sort of (start, TitleMatch) tuples
+    ])
+    def test_macro_no_execution_failed(self, pagename):
+        """Macros on system pages render without 'execution failed'."""
+        status, body = self._get('/' + pagename)
+        assert status[:3] == '200'
+        assert not MACRO_FAILED.search(body)
+
 
 # ---------------------------------------------------------------------------
 # 2. Full-page scan — every page, no 500
@@ -187,4 +212,5 @@ class TestAllPages(_WikiClient):
 
     @pytest.mark.parametrize("pagename", _ALL_PAGES)
     def test_page_no_500(self, pagename):
-        self._assert_no_500('/' + pagename)
+        status, body = self._assert_no_500('/' + pagename)
+        assert not MACRO_FAILED.search(body)

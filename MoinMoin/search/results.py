@@ -149,7 +149,7 @@ class FoundPage(object):
             tmp = [(match.start, match) for match in matches if isinstance(match, type)]
         else:
             tmp = [(match.weight(), match) for match in matches if isinstance(match, type)]
-        tmp.sort()
+        tmp.sort(key=lambda item: item[0])
         if sort == 'weight':
             tmp.reverse()
         matches = [item[1] for item in tmp]
@@ -168,7 +168,7 @@ class FoundPage(object):
         """
         # Filter by type and sort by match.start using fast schwartzian transform.
         tmp = [(match.start, match) for match in self._matches if isinstance(match, type)]
-        tmp.sort()
+        tmp.sort(key=lambda item: item[0])
 
         if not len(tmp):
             return []
@@ -257,14 +257,14 @@ class SearchResults(object):
     def _sortByWeight(self):
         """ Sorts found pages by the weight of the matches """
         tmp = [(hit.weight(), hit.page_name, hit.attachment, hit) for hit in self.hits]
-        tmp.sort()
+        tmp.sort(key=lambda item: (item[0], item[1], item[2] or u""))
         tmp.reverse()
         self.hits = [item[3] for item in tmp]
 
     def _sortByPagename(self):
         """ Sorts a list of found pages alphabetical by page/attachment name """
         tmp = [(hit.page_name, hit.attachment, hit) for hit in self.hits]
-        tmp.sort()
+        tmp.sort(key=lambda item: (item[0], item[1] or u""))
         self.hits = [item[2] for item in tmp]
 
     def stats(self, request, formatter, hitsFrom):

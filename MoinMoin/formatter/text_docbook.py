@@ -829,12 +829,12 @@ class Formatter(FormatterBase):
             from html.entities import name2codepoint
             for ent in entities:
                 if ent in name2codepoint:
-                    cleaned = cleaned.replace("&%s;" % ent, unichr(name2codepoint[ent]))
+                    cleaned = cleaned.replace("&%s;" % ent, chr(name2codepoint[ent]))
 
             # Then we replace all escaped unicodes.
             escapedunicodes = re.compile("&#(?P<h>[0-9]+);").findall(markup)
             for uni in escapedunicodes:
-                cleaned = cleaned.replace("&#%s;" % uni, unichr(int(uni)))
+                cleaned = cleaned.replace("&#%s;" % uni, chr(int(uni)))
 
             self.text(cleaned)
 
