@@ -8,6 +8,18 @@
 
 import py
 
+from MoinMoin._tests import wikiconfig
+
+
+class TestNaviBar:
+    class Config(wikiconfig.Config):
+        # non-string entries are left for a theme that renders them (e.g. a drop-down menu)
+        navi_bar = [u'%(page_front_page)s', (u'Menu', [u'PageA', u'PageB'])]
+
+    def testNestedEntriesKept(self):
+        cfg = self.request.cfg
+        assert cfg.navi_bar == [cfg.page_front_page, (u'Menu', [u'PageA', u'PageB'])]
+
 
 class TestPasswordChecker:
     username = u"SomeUser"

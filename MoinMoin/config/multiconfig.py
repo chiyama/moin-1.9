@@ -365,7 +365,9 @@ class ConfigFunctionality(object):
 
         # we replace any string placeholders with config values
         # e.g u'%(page_front_page)s' % self
-        self.navi_bar = [elem % self for elem in self.navi_bar]
+        # other entries (e.g. nested menus) are left to the theme
+        self.navi_bar = [elem % self if isinstance(elem, str) else elem
+                         for elem in self.navi_bar]
 
         # check if python-xapian is installed
         if self.xapian_search:
