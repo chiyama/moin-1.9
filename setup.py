@@ -10,7 +10,9 @@
 import os, sys, glob
 
 from setuptools import setup
-from setuptools.command.build_scripts import build_scripts
+# setuptools has no build_scripts command of its own; importing setuptools
+# first makes "distutils" resolve to its bundled copy (needed on 3.12+)
+from distutils.command.build_scripts import build_scripts
 
 from MoinMoin.version import release, revision
 
