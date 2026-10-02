@@ -12,6 +12,6 @@ def execute(xmlrpcobj, *args):
     if not username:
         username = "<unknown user>"
     valid = request.user.valid
-    result = "You are %s. valid=%d." % (username.encode("utf-8"), valid)
+    result = "You are %s. valid=%d." % (username, valid)
     return xmlrpcobj._outstr(result)
 

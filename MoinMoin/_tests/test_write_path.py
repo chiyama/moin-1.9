@@ -76,6 +76,10 @@ class TestWritePath:
         info = self._rpc('getPageInfo', (PAGENAME, ))
         assert info['author'] == u'Self:' + AGENT
 
+    def test_xmlrpc_whoami(self):
+        """WhoAmI returns the user name as text, not as a bytes repr."""
+        assert self._rpc('WhoAmI', (), remote_user=AGENT) == u'You are %s. valid=1.' % AGENT
+
     def test_xmlrpc_put_anonymous_rejected(self):
         with pytest.raises(xmlrpc.client.Fault):
             self._rpc('putPage', (PAGENAME, u'spam\n'))
