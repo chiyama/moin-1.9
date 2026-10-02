@@ -25,7 +25,7 @@ Ranked by reachability and impact. Work these first, one per session.
 
 | # | Item | Why first |
 |---|---|---|
-| 1 | [R-1](#r-runtime) Python 3.10 end of life | No security fixes for the interpreter at all; blocks nothing else but affects everything |
+| 1 | [R-1](#r-runtime) Python 3.10 end of life | No security fixes for the interpreter at all; blocks nothing else but affects everything. R-2 and R-6 (the blockers for 3.12+) are fixed |
 | 2 | [V-1](#v-vendored-libraries) werkzeug 1.0.1 multipart DoS | Reachable by anonymous users with any POST |
 | 3 | [V-5](#v-vendored-libraries) pygments 2.5.2 ReDoS / infinite loop | Reachable by anyone who can edit a page |
 | 4 | [P-1](#p-weaknesses-and-defects-introduced-by-the-port), P-3 port defects in security code | Fail closed today, but each fix must avoid reintroducing upstream weaknesses (see U-3). P-2, P-4 (GivenAuth), P-5 are fixed |
@@ -35,10 +35,11 @@ Ranked by reachability and impact. Work these first, one per session.
 
 | ID | Summary | Status | Evidence / notes | Next action |
 |---|---|---|---|---|
-| R-1 | Python 3.10 reached end of life in 2026-10 (3.10.22 is the final release). The `.venv` runs 3.10.11, 11 security releases behind (e.g. CVE-2023-24329, CVE-2023-40217, CVE-2024-4030). | open | https://devguide.python.org/versions/ ; https://www.python.org/downloads/release/python-31022/ | Move to Python 3.12+ (EOL 2028-10) or 3.14 (EOL 2030-10). Blockers below. |
-| R-2 | `import imp` (removed in 3.12) in plugin loading: on 3.12+ every request returns 500. With `imp` replaced, 20 sampled URLs returned 200 on 3.14.4. | open | `MoinMoin/config/multiconfig.py:587` (`_loadPluginModule`) | Replace with `importlib`. |
+| R-1 | Python 3.10 reached end of life in 2026-10 (3.10.22 is the final release). The `.venv` runs 3.10.11, 11 security releases behind (e.g. CVE-2023-24329, CVE-2023-40217, CVE-2024-4030). | open | https://devguide.python.org/versions/ ; https://www.python.org/downloads/release/python-31022/ | Move to Python 3.12+ (EOL 2028-10) or 3.14 (EOL 2030-10). Blockers R-2 and R-6 are fixed; on 2026-10-02 `MoinMoin/_tests` gave the same result on 3.10.11, 3.12.11 and 3.14.4 (18 failed, 72 passed). |
+| R-2 | `import imp` (removed in 3.12) in plugin loading: on 3.12+ every request returns 500. | fixed | `config/multiconfig.py` `_loadPluginModule` uses `importlib.util.spec_from_file_location` and a module-level lock | — |
 | R-3 | Invalid escape sequences (SyntaxWarning on 3.12+, planned SyntaxError) in modules imported at startup | open | `util/timefuncs.py:29`, `packages.py:203`, `action/__init__.py:239`; scripts: `script/account/check.py:124`, `script/migration/text_moin158_wiki.py:51,946`, `script/old/repair_language.py:70` | Use raw strings. |
 | R-4 | `return` inside `finally` (SyntaxWarning on 3.14, PEP 765) | open | `util/lock.py:241` | Restructure. |
+| R-6 | The page cache stores marshalled bytecode. Bytecode written by one Python version and executed by another can crash the interpreter (seen: cache from 3.10 executed by 3.14 gave an access violation in `Page.execute`). Upstream relied on running `moin maint cleancache` after a Python upgrade. | fixed | `Page.makeCache` prefixes `importlib.util.MAGIC_NUMBER`; `Page.loadCache` rebuilds the cache when the prefix differs. Test: `_tests/test_Page.py` `testLoadCacheRejectsOtherPythonBytecode` | — |
 | R-5 | `crypt` removed in 3.13: legacy `{DES}` password hashes stop verifying (fails closed; already the case on Windows) | open (low) | `user.py:30,741` (guarded import) | Verify `{DES}` via passlib, or document as unsupported. |
 
 ## V. Vendored libraries
@@ -146,4 +147,4 @@ knowingly (ADR-004: operating decisions are made elsewhere).
 | ID | Summary | Status | Evidence |
 |---|---|---|---|
 | T-1 | ACL and auth regression suites are never collected: `security/_tests/test_security.py` uses yield tests; `auth/_tests/test_auth.py`, `test_ldap_login.py` skip at module level | open | pytest collection |
-| T-2 | Known baseline failures: 18 in `MoinMoin/_tests` (incl. `test_user.py`, see P-1), 6 in `action/_tests/test_cache.py` (see P-3) | open | pytest run |
+| T-2 | Known baseline failures: 18 in `MoinMoin/_tests` (incl. `test_user.py`, see P-1; `test_PageEditor.py` uses the removed `py.test`), 6 in `action/_tests/test_cache.py` (see P-3) | open | pytest run, 2026-10-02 (same on 3.10, 3.12, 3.14) |

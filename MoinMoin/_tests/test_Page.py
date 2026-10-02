@@ -7,6 +7,7 @@
 """
 
 import py
+import pytest
 
 from MoinMoin.Page import Page
 
@@ -63,6 +64,24 @@ class TestPage:
         del out
         assert result.strip().endswith('</html>')
         assert result.strip().startswith('<!DOCTYPE HTML PUBLIC')
+
+    def testLoadCacheRejectsOtherPythonBytecode(self):
+        """ a cache written by another Python version is rebuilt, not executed
+
+        Executing marshalled code from another Python version can crash the
+        interpreter (seen: 3.10 cache executed by 3.14).
+        """
+        import marshal
+        from MoinMoin import caching
+        page = Page(self.request, u"FrontPage")
+        page.send_page(content_only=1)  # make sure the cache exists
+        cache = caching.CacheEntry(self.request, page, page.getFormatterName(), scope='item')
+        assert page.loadCache(self.request) is not None
+        # cache in the old format: marshal data without a version tag
+        cache.update(marshal.dumps(compile('pass', 'x', 'exec')))
+        with pytest.raises(Exception) as excinfo:
+            page.loadCache(self.request)
+        assert str(excinfo.value) == 'CacheNeedsUpdate'
 
 class TestRootPage:
     def testPageList(self):

@@ -1470,8 +1470,14 @@ class Page(object):
             raise Exception('CacheNeedsUpdate')
 
         import marshal
+        from importlib.util import MAGIC_NUMBER
+        data = cache.content()
+        if not data.startswith(MAGIC_NUMBER):
+            # written by another Python version (or before the tag was added):
+            # marshalled code is version specific and may crash the interpreter
+            raise Exception('CacheNeedsUpdate')
         try:
-            return marshal.loads(cache.content())
+            return marshal.loads(data[len(MAGIC_NUMBER):])
         except (EOFError, ValueError, TypeError):
             # Bad marshal data, must update the cache.
             # See http://docs.python.org/lib/module-marshal.html
@@ -1484,6 +1490,7 @@ class Page(object):
     def makeCache(self, request, parser):
         """ Format content into code, update cache and return code """
         import marshal
+        from importlib.util import MAGIC_NUMBER
         from MoinMoin.formatter.text_python import Formatter
         formatter = Formatter(request, ["page"], self.formatter)
 
@@ -1498,7 +1505,7 @@ class Page(object):
         code = compile(src.encode(config.charset),
                        self.page_name.encode(config.charset), 'exec')
         cache = caching.CacheEntry(request, self, self.getFormatterName(), scope='item')
-        cache.update(marshal.dumps(code))
+        cache.update(MAGIC_NUMBER + marshal.dumps(code))
         return code
 
     def _specialPageText(self, request, special_type):
